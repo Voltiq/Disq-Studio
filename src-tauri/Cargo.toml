@@ -1,0 +1,55 @@
+[package]
+name = "disk-studio"
+version = "1.0.0"
+description = "Disq Studio: a fast disk space visualizer for Windows"
+license = "MIT"
+repository = "https://github.com/Voltiq/Disq-Studio"
+authors = ["Voltiq"]
+edition = "2021"
+
+[lib]
+name = "disk_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+# One window: a second launch (e.g. "Analyze with Disq Studio") hands its folder to the open one.
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rayon = "1"
+parking_lot = "0.12"
+# Fast hashing for the duplicate finder.
+blake3 = "1"
+# Moves deleted items to the Recycle Bin instead of erasing them.
+trash = "5"
+# Compresses saved scans (snapshots).
+flate2 = "1"
+# Updates from GitHub Releases, checked against the public key in tauri.conf.json; then a restart.
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
+[target.'cfg(windows)'.dependencies]
+# Windows notifications from the background check, which runs without a window.
+tauri-winrt-notification = "0.7"
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_IO",
+  "Win32_System_Registry",
+  "Win32_System_ProcessStatus",
+  "Win32_System_Threading",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

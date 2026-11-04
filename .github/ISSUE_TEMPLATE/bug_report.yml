@@ -1,0 +1,37 @@
+name: Bug report
+description: Something doesn't work, or shows the wrong thing.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Disq Studio version
+      description: Settings › About.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: dropdown
+    id: admin
+    attributes:
+      label: Running as administrator?
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: For a wrong size, which folder, and whether "Size" or "On disk" was selected. Screenshots help, but check they show nothing private.
