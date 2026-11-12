@@ -23,7 +23,7 @@ tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rayon = "1"
-parking_lot = "0.12"
+parking_lot = "0.13"
 # Fast hashing for the duplicate finder.
 blake3 = "1"
 # Moves deleted items to the Recycle Bin instead of erasing them.
@@ -36,7 +36,7 @@ tauri-plugin-process = "2"
 
 [target.'cfg(windows)'.dependencies]
 # Windows notifications from the background check, which runs without a window.
-tauri-winrt-notification = "0.7"
+tauri-winrt-notification = "0.8"
 windows-sys = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Security",
