@@ -6,6 +6,8 @@ import { plural } from "../lib/format";
 import type { ExportFormat, ExportOptions } from "../lib/types";
 import { cx } from "../lib/utils";
 import { Button, IconButton } from "./ui/Button";
+import { Select } from "./ui/Select";
+import { t } from "../lib/i18n";
 
 interface ExportDialogProps {
   folderId: number;
@@ -17,23 +19,23 @@ interface ExportDialogProps {
 }
 
 const FORMATS: { value: ExportFormat; label: string; hint: string; ext: string }[] = [
-  { value: "html", label: "Web page", hint: "A report to read or share: totals, contents with bars, file types, largest files.", ext: "html" },
-  { value: "csv", label: "CSV", hint: "One row per item, for Excel or another spreadsheet.", ext: "csv" },
-  { value: "json", label: "JSON", hint: "One object per item, for scripts and other tools.", ext: "json" },
+  { value: "html", label: t("Web page"), hint: t("A report to read or share: totals, contents with bars, file types, largest files."), ext: "html" },
+  { value: "csv", label: "CSV", hint: t("One row per item, for Excel or another spreadsheet."), ext: "csv" },
+  { value: "json", label: "JSON", hint: t("One object per item, for scripts and other tools."), ext: "json" },
 ];
 
 const DEPTHS = [
-  { value: 1, label: "1 level" },
-  { value: 2, label: "2 levels" },
-  { value: 3, label: "3 levels" },
-  { value: 0, label: "Everything" },
+  { value: 1, label: t("1 level") },
+  { value: 2, label: t("2 levels") },
+  { value: 3, label: t("3 levels") },
+  { value: 0, label: t("Everything") },
 ];
 
 const MIN_SIZES = [
-  { value: 0, label: "Any size" },
-  { value: 1024 ** 2, label: "1 MB or more" },
-  { value: 100 * 1024 ** 2, label: "100 MB or more" },
-  { value: 1024 ** 3, label: "1 GB or more" },
+  { value: 0, label: t("Any size") },
+  { value: 1024 ** 2, label: t("1 MB or more") },
+  { value: 100 * 1024 ** 2, label: t("100 MB or more") },
+  { value: 1024 ** 3, label: t("1 GB or more") },
 ];
 
 /** Writes a report of the folder in view. */
@@ -58,10 +60,10 @@ export function ExportDialog({ folderId, folderName, filterOn, onDone, onClose }
   }, [onClose]);
 
   async function run() {
-    const base = folderName.replace(/[\\/:*?"<>|]+/g, " ").trim() || "Disk";
+    const base = folderName.replace(/[\\/:*?"<>|]+/g, " ").trim() || t("Disk");
     const path = await pickSaveFile({
-      title: "Export a report",
-      defaultPath: `${base} - Disq Studio report.${format.ext}`,
+      title: t("Export a report"),
+      defaultPath: t("{0} - Disq Studio report.{1}", base, format.ext),
       filters: [{ name: format.label, extensions: [format.ext] }],
     });
     if (!path) return;
@@ -82,17 +84,17 @@ export function ExportDialog({ folderId, folderName, filterOn, onDone, onClose }
       <div className="modal modal-medium settings" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <div className="modal-header">
           <h2 className="modal-title" id="export-title">
-            Export {folderName}
+            {t("Export")}{" "}{folderName}
           </h2>
-          <IconButton icon={X} label="Close" onClick={onClose} />
+          <IconButton icon={X} label={t("Close")} onClick={onClose} />
         </div>
         <div className="modal-body">
           <div className="settings-row">
             <span className="settings-label">
-              Format
+              {t("Format")}
               <span className="settings-hint">{format.hint}</span>
             </span>
-            <div className="segmented" role="radiogroup" aria-label="Format">
+            <div className="segmented" role="radiogroup" aria-label={t("Format")}>
               {FORMATS.map((f) => (
                 <button
                   key={f.value}
@@ -108,10 +110,10 @@ export function ExportDialog({ folderId, folderName, filterOn, onDone, onClose }
           </div>
           <div className="settings-row">
             <span className="settings-label">
-              How deep
-              <span className="settings-hint">Levels of folders below {folderName}.</span>
+              {t("How deep")}
+              <span className="settings-hint">{t("Levels of folders below {0}.", folderName)}</span>
             </span>
-            <div className="segmented" role="radiogroup" aria-label="How deep">
+            <div className="segmented" role="radiogroup" aria-label={t("How deep")}>
               {DEPTHS.map((d) => (
                 <button
                   key={d.value}
@@ -126,34 +128,28 @@ export function ExportDialog({ folderId, folderName, filterOn, onDone, onClose }
             </div>
           </div>
           <div className="settings-row">
-            <span className="settings-label">Leave out items smaller than</span>
-            <select className="filter-select" aria-label="Leave out items smaller than" value={options.minSize} onChange={(e) => set({ minSize: Number(e.target.value) })}>
-              {MIN_SIZES.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+            <span className="settings-label">{t("Leave out items smaller than")}</span>
+            <Select label={t("Leave out items smaller than")} value={options.minSize} options={MIN_SIZES} onChange={(minSize) => set({ minSize })} />
           </div>
           <label className="settings-row settings-check">
             <span className="settings-label">
-              Include files
-              <span className="settings-hint">Off: folders only.</span>
+              {t("Include files")}
+              <span className="settings-hint">{t("Off: folders only.")}</span>
             </span>
             <input type="checkbox" checked={options.includeFiles} onChange={(e) => set({ includeFiles: e.target.checked })} />
           </label>
           {options.maxDepth === 0 && options.minSize === 0 && options.includeFiles && (
-            <p className="settings-hint">Every item, of any size: for a whole drive that's a file with millions of rows.</p>
+            <p className="settings-hint">{t("Every item, of any size: for a whole drive that's a file with millions of rows.")}</p>
           )}
-          {filterOn && <p className="settings-hint">A filter is on, so only matching files are counted, as on screen.</p>}
+          {filterOn && <p className="settings-hint">{t("A filter is on, so only matching files are counted, as on screen.")}</p>}
           {error && <p className="settings-hint settings-warning">{error}</p>}
         </div>
         <div className="modal-footer">
           <Button appearance="subtle" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button ref={exportRef} appearance="primary" iconBefore={Download} loading={busy} onClick={run}>
-            Export…
+            {t("Export…")}
           </Button>
         </div>
       </div>

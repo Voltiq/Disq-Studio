@@ -6,6 +6,7 @@ import type { FilterHit, FilterSummary } from "../lib/types";
 import { cx } from "../lib/utils";
 import { RowCells } from "./ListColumns";
 import { EmptyState } from "./ui/Feedback";
+import { t, locale } from "../lib/i18n";
 
 interface MatchesListProps {
   summary: FilterSummary;
@@ -19,10 +20,10 @@ interface MatchesListProps {
 export function MatchesList({ summary, layout, selectedIds, onPick, onContextMenu }: MatchesListProps) {
   const largest = summary.hits[0]?.size ?? 0;
   return (
-    <div className="list" role="listbox" aria-label="Matches">
+    <div className="list" role="listbox" aria-label={t("Matches")}>
       {summary.hits.length === 0 && (
-        <EmptyState icon={SearchX} title="Nothing matches" compact>
-          Try fewer terms or conditions, or part of a name instead of all of it.
+        <EmptyState icon={SearchX} title={t("Nothing matches")} compact>
+          {t("Try fewer terms or conditions, or part of a name instead of all of it.")}
         </EmptyState>
       )}
       {summary.hits.map((hit) => {
@@ -73,7 +74,7 @@ export function MatchesList({ summary, layout, selectedIds, onPick, onContextMen
       })}
       {summary.totalHits > summary.hits.length && (
         <p className="hud-stat" style={{ padding: "var(--space-150)", textAlign: "center" }}>
-          Showing the largest {summary.hits.length.toLocaleString()} of {summary.totalHits.toLocaleString()} matches
+          {t("Showing the largest {0} of {1} matches", summary.hits.length.toLocaleString(locale()), summary.totalHits.toLocaleString(locale()))}
         </p>
       )}
     </div>

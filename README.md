@@ -35,6 +35,7 @@ protected your PC": choose **More info › Run anyway**.
 - **Remembers**: each scan is kept as a snapshot, so you can see what grew, what shrank and what's new since.
 - **Watches**: an optional daily check warns when a drive is getting full, without opening a window.
 - **Exports** a folder as a web page report, CSV or JSON.
+- **Speaks English and German**, following Windows or your choice in Settings.
 
 Nothing leaves your PC: Disq Studio sends no files, folder names or usage anywhere. The only network
 request is the update check against this repository's releases.
@@ -92,6 +93,8 @@ A few slower checks run only when asked, on real folders and read-only, for exam
 - `src-tauri/src/background.rs`: the daily check (`--background`, Task Scheduler, notifications)
 - `src-tauri/src/lib.rs`: Tauri commands and events
 - `src/`: the React interface; `src/lib/treemap.ts` is the squarified treemap layout
+- `src/lib/i18n.ts`, `de.ts`: translation; the English text is the key, `de.ts` the German table, and
+  `npm test` checks that every string has one (`node scripts/i18n-wrap.mjs --keys` lists them)
 - `installer/`: NSIS hooks (the Explorer menu entry) and the installer artwork
 
 [ROADMAP.md](ROADMAP.md) has the details and measurements behind each feature, and what's next.

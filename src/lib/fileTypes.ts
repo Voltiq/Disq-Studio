@@ -3,6 +3,8 @@
  * Graphiq decorative accents, so they follow the theme.
  */
 
+import { t } from "./i18n";
+
 export type Category =
   | "video"
   | "image"
@@ -15,15 +17,15 @@ export type Category =
   | "other";
 
 export const CATEGORY_LABEL: Record<Category, string> = {
-  video: "Video",
-  image: "Images",
-  audio: "Audio",
-  archive: "Archives & disk images",
-  code: "Code & data",
-  document: "Documents",
-  app: "Programs",
-  system: "System & cache",
-  other: "Other",
+  video: t("Video"),
+  image: t("Images"),
+  audio: t("Audio"),
+  archive: t("Archives & disk images"),
+  code: t("Code & data"),
+  document: t("Documents"),
+  app: t("Programs"),
+  system: t("System & cache"),
+  other: t("Other"),
 };
 
 /** CSS variable holding each category's colour. */

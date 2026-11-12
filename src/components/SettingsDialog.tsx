@@ -10,6 +10,10 @@ import { ACCENTS, type Prefs } from "../lib/settings";
 import type { SizeMode, ThemePreference } from "../lib/types";
 import { cx } from "../lib/utils";
 import { Button, IconButton } from "./ui/Button";
+import { Select } from "./ui/Select";
+import { languageChoice, saveLanguageChoice, t, type LanguageChoice } from "../lib/i18n";
+import { tx } from "../lib/tx";
+import { relaunch } from "@tauri-apps/plugin-process";
 
 interface SettingsDialogProps {
   theme: ThemePreference;
@@ -30,9 +34,9 @@ interface SettingsDialogProps {
 }
 
 const THEMES: { value: ThemePreference; label: string }[] = [
-  { value: "dark", label: "Dark" },
-  { value: "light", label: "Light" },
-  { value: "system", label: "Follow Windows" },
+  { value: "dark", label: t("Dark") },
+  { value: "light", label: t("Light") },
+  { value: "system", label: t("Follow Windows") },
 ];
 
 /** Every change applies straight away; there's nothing to save. */
@@ -52,6 +56,9 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const doneRef = useRef<HTMLButtonElement>(null);
   const [version, setVersion] = useState<string | null>(null);
+  const [language, setLanguage] = useState<LanguageChoice>(languageChoice);
+  // The language in use was fixed at start; a different choice waits for a restart.
+  const [startLanguage] = useState<LanguageChoice>(languageChoice);
   const [excludesChanged, setExcludesChanged] = useState(false);
   const [rule, setRule] = useState("");
   const [bg, setBg] = useState<BackgroundConfig | null>(null);
@@ -138,7 +145,7 @@ export function SettingsDialog({
     if (!update) return;
     setUpdateState("installing");
     try {
-      await installUpdate(update, (f) => setUpdateNote(f == null ? "Downloading…" : `Downloading… ${Math.round(f * 100)}%`));
+      await installUpdate(update, (f) => setUpdateNote(f == null ? t("Downloading…") : t("Downloading… {0}%", Math.round(f * 100))));
     } catch (e) {
       setUpdateState("failed");
       setUpdateNote(errorText(e));
@@ -158,21 +165,21 @@ export function SettingsDialog({
 
   async function saveSettingsFile() {
     const path = await pickSaveFile({
-      title: "Export settings",
-      defaultPath: "Disq Studio settings.json",
+      title: t("Export settings"),
+      defaultPath: t("Disq Studio settings.json"),
       filters: [{ name: "Settings", extensions: ["json"] }],
     });
     if (!path) return;
     try {
       await exportSettings(path);
-      setFileNote(`Saved to ${path}.`);
+      setFileNote(t("Saved to {0}.", path));
     } catch (e) {
       setFileNote(errorText(e));
     }
   }
 
   async function loadSettingsFile() {
-    const path = await pickFolder({ title: "Import settings", filters: [{ name: "Settings", extensions: ["json"] }], multiple: false });
+    const path = await pickFolder({ title: t("Import settings"), filters: [{ name: "Settings", extensions: ["json"] }], multiple: false });
     if (typeof path !== "string") return;
     try {
       await importSettings(path);
@@ -184,7 +191,7 @@ export function SettingsDialog({
   }
 
   async function addExclude() {
-    const picked = await pickFolder({ directory: true, title: "Choose a folder Disq Studio should skip" });
+    const picked = await pickFolder({ directory: true, title: t("Choose a folder Disq Studio should skip") });
     if (typeof picked !== "string") return;
     const key = (p: string) => p.toLowerCase().replace(/[\\/]+$/, "");
     if (prefs.excludes.some((p) => key(p) === key(picked))) return;
@@ -202,19 +209,19 @@ export function SettingsDialog({
       <div className="modal modal-medium settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div className="modal-header">
           <h2 className="modal-title" id="settings-title">
-            Settings
+            {t("Settings")}
           </h2>
-          <IconButton icon={X} label="Close" onClick={onClose} />
+          <IconButton icon={X} label={t("Close")} onClick={onClose} />
         </div>
 
         <div className="modal-body">
           <section className="settings-section" aria-labelledby="set-look">
             <h3 className="eyebrow" id="set-look">
-              Appearance
+              {t("Appearance")}
             </h3>
             <div className="settings-row">
-              <span className="settings-label">Theme</span>
-              <div className="segmented" role="radiogroup" aria-label="Theme">
+              <span className="settings-label">{t("Theme")}</span>
+              <div className="segmented" role="radiogroup" aria-label={t("Theme")}>
                 {THEMES.map((t) => (
                   <button
                     key={t.value}
@@ -229,8 +236,34 @@ export function SettingsDialog({
               </div>
             </div>
             <div className="settings-row">
-              <span className="settings-label">Accent colour</span>
-              <div className="accent-swatches" role="radiogroup" aria-label="Accent colour">
+              <span className="settings-label">
+                {t("Language")}
+                {language !== startLanguage && (
+                  <span className="settings-hint">
+                    {t("Applies when Disq Studio starts again.")}{" "}
+                    <button type="button" className="link-button" onClick={() => relaunch().catch(() => {})}>
+                      {t("Restart now")}
+                    </button>
+                  </span>
+                )}
+              </span>
+              <Select<LanguageChoice>
+                label={t("Language")}
+                value={language}
+                options={[
+                  { value: "system", label: t("Follow Windows") },
+                  { value: "en", label: "English" },
+                  { value: "de", label: "Deutsch" },
+                ]}
+                onChange={(choice) => {
+                  saveLanguageChoice(choice);
+                  setLanguage(choice);
+                }}
+              />
+            </div>
+            <div className="settings-row">
+              <span className="settings-label">{t("Accent colour")}</span>
+              <div className="accent-swatches" role="radiogroup" aria-label={t("Accent colour")}>
                 {ACCENTS.map((a) => {
                   const on = prefs.accent === a.value;
                   return (
@@ -254,16 +287,16 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-sizes">
             <h3 className="eyebrow" id="set-sizes">
-              Sizes
+              {t("Sizes")}
             </h3>
             <div className="settings-row">
               <span className="settings-label">
-                Measure by
+                {t("Measure by")}
                 <span className="settings-hint">
-                  Size is how long files are; on disk is the space they really take.
+                  {t("Size is how long files are; on disk is the space they really take.")}
                 </span>
               </span>
-              <div className="segmented" role="radiogroup" aria-label="Measure sizes by">
+              <div className="segmented" role="radiogroup" aria-label={t("Measure sizes by")}>
                 {(["logical", "allocated"] as const).map((m) => (
                   <button
                     key={m}
@@ -279,21 +312,21 @@ export function SettingsDialog({
             </div>
             <div className="settings-row">
               <span className="settings-label">
-                Units
+                {t("Units")}
                 <span className="settings-hint">
                   {prefs.units === "binary"
-                    ? "Matches Explorer: a 500 GB drive shows as about 466 GB."
-                    : "Matches the box: a 500 GB drive shows as 500 GB."}
+                    ? t("Matches Explorer: a 500 GB drive shows as about 466 GB.")
+                    : t("Matches the box: a 500 GB drive shows as 500 GB.")}
                 </span>
               </span>
-              <div className="segmented" role="radiogroup" aria-label="Units">
+              <div className="segmented" role="radiogroup" aria-label={t("Units")}>
                 <button
                   className={cx("segment", prefs.units === "binary" && "is-selected")}
                   role="radio"
                   aria-checked={prefs.units === "binary"}
                   onClick={() => onPrefs({ ...prefs, units: "binary" })}
                 >
-                  Like Windows (1,024)
+                  {t("Like Windows (1,024)")}
                 </button>
                 <button
                   className={cx("segment", prefs.units === "decimal" && "is-selected")}
@@ -301,7 +334,7 @@ export function SettingsDialog({
                   aria-checked={prefs.units === "decimal"}
                   onClick={() => onPrefs({ ...prefs, units: "decimal" })}
                 >
-                  Decimal (1,000)
+                  {t("Decimal (1,000)")}
                 </button>
               </div>
             </div>
@@ -309,12 +342,15 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-scan">
             <h3 className="eyebrow" id="set-scan">
-              Folders to skip
+              {t("Folders to skip")}
             </h3>
             <p className="settings-hint">
-              These are never read. They show up as skipped, with no size, in every scan that would include them. Add a
-              folder, or a name to skip wherever it is: <code>node_modules</code> skips every folder of that name,{" "}
-              <code>*cache*</code> any with "cache" in it, <code>steamapps\shadercache</code> that path ending.
+              {tx(
+                "These are never read. They show up as skipped, with no size, in every scan that would include them. Add a folder, or a name to skip wherever it is: {0} skips every folder of that name, {1} any with \"cache\" in it, {2} that path ending.",
+                <code>node_modules</code>,
+                <code>*cache*</code>,
+                <code>steamapps\shadercache</code>,
+              )}
             </p>
             {prefs.excludes.length > 0 ? (
               <ul className="exclude-list">
@@ -323,7 +359,7 @@ export function SettingsDialog({
                     <span className="inspector-path">{p}</span>
                     <IconButton
                       icon={FolderMinus}
-                      label={`Stop skipping ${p}`}
+                      label={t("Stop skipping {0}", p)}
                       spacing="compact"
                       onClick={() => removeExclude(p)}
                     />
@@ -331,17 +367,17 @@ export function SettingsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="hud-stat">Nothing is skipped.</p>
+              <p className="hud-stat">{t("Nothing is skipped.")}</p>
             )}
             <div className="actions">
               <Button spacing="compact" iconBefore={FolderPlus} onClick={addExclude}>
-                Add folder…
+                {t("Add folder…")}
               </Button>
               <label className="filter-search rule-input">
                 <input
                   value={skipPattern}
-                  placeholder="or a name: node_modules, *cache*…"
-                  aria-label="Folder name or pattern to skip everywhere"
+                  placeholder={t("or a name: node_modules, *cache*…")}
+                  aria-label={t("Folder name or pattern to skip everywhere")}
                   spellCheck={false}
                   onChange={(e) => setSkipPattern(e.target.value)}
                   onKeyDown={(e) => {
@@ -353,11 +389,11 @@ export function SettingsDialog({
                 />
               </label>
               <Button spacing="compact" iconBefore={ListPlus} disabled={!skipPattern.trim()} onClick={addSkipPattern}>
-                Add
+                {t("Add")}
               </Button>
               {excludesChanged && canRescan && (
                 <Button spacing="compact" appearance="subtle" onClick={onRescan}>
-                  Rescan now to apply
+                  {t("Rescan now to apply")}
                 </Button>
               )}
             </div>
@@ -365,11 +401,14 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-cleanup">
             <h3 className="eyebrow" id="set-cleanup">
-              Cleanup rules
+              {t("Cleanup rules")}
             </h3>
             <p className="settings-hint">
-              Your own suggestions for the Cleanup tab, under "Your rules". Write them like a search: a name such as{" "}
-              <code>*.bak</code>, or a path such as <code>Renders\scratch</code> (a matching folder is suggested whole).
+              {tx(
+                "Your own suggestions for the Cleanup tab, under \"Your rules\". Write them like a search: a name such as {0}, or a path such as {1} (a matching folder is suggested whole).",
+                <code>*.bak</code>,
+                <code>Renders\scratch</code>,
+              )}
             </p>
             {prefs.cleanupRules.length > 0 ? (
               <ul className="exclude-list">
@@ -378,7 +417,7 @@ export function SettingsDialog({
                     <span className="inspector-path">{r}</span>
                     <IconButton
                       icon={X}
-                      label={`Remove the rule ${r}`}
+                      label={t("Remove the rule {0}", r)}
                       spacing="compact"
                       onClick={() => onPrefs({ ...prefs, cleanupRules: prefs.cleanupRules.filter((x) => x !== r) })}
                     />
@@ -386,14 +425,14 @@ export function SettingsDialog({
                 ))}
               </ul>
             ) : (
-              <p className="hud-stat">No rules of your own yet.</p>
+              <p className="hud-stat">{t("No rules of your own yet.")}</p>
             )}
             <div className="actions">
               <label className="filter-search rule-input">
                 <input
                   value={rule}
-                  placeholder="*.bak, Renders\scratch…"
-                  aria-label="New cleanup rule"
+                  placeholder={t("*.bak, Renders\\scratch…")}
+                  aria-label={t("New cleanup rule")}
                   spellCheck={false}
                   onChange={(e) => setRule(e.target.value)}
                   onKeyDown={(e) => {
@@ -405,21 +444,20 @@ export function SettingsDialog({
                 />
               </label>
               <Button spacing="compact" iconBefore={ListPlus} disabled={!rule.trim()} onClick={addRule}>
-                Add rule
+                {t("Add rule")}
               </Button>
             </div>
           </section>
 
           <section className="settings-section" aria-labelledby="set-delete">
             <h3 className="eyebrow" id="set-delete">
-              Deleting
+              {t("Deleting")}
             </h3>
             <label className="settings-row settings-check">
               <span className="settings-label">
-                Offer "Delete permanently"
+                {t("Offer \"Delete permanently\"")}
                 <span className="settings-hint">
-                  Adds a button to delete confirmations that skips the Recycle Bin. Everything it deletes is gone for
-                  good, so it always asks a second time.
+                  {t("Adds a button to delete confirmations that skips the Recycle Bin. Everything it deletes is gone for good, so it always asks a second time.")}
                 </span>
               </span>
               <input
@@ -430,21 +468,20 @@ export function SettingsDialog({
             </label>
             {prefs.allowPermanentDelete && (
               <p className="settings-hint settings-warning">
-                <Trash2 size={13} aria-hidden="true" /> Permanent delete is on.
+                <Trash2 size={13} aria-hidden="true" /> {t("Permanent delete is on.")}
               </p>
             )}
           </section>
 
           <section className="settings-section" aria-labelledby="set-history">
             <h3 className="eyebrow" id="set-history">
-              History
+              {t("History")}
             </h3>
             <label className="settings-row settings-check">
               <span className="settings-label">
-                Keep a snapshot of every scan
+                {t("Keep a snapshot of every scan")}
                 <span className="settings-hint">
-                  The newest 8 of each drive or folder, about 30 MB each for a full C: drive. History compares them with
-                  the scan in view.
+                  {t("The newest 8 of each drive or folder, about 30 MB each for a full C: drive. History compares them with the scan in view.")}
                 </span>
               </span>
               <input
@@ -458,18 +495,17 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-background">
             <h3 className="eyebrow" id="set-background">
-              Daily check
+              {t("Daily check")}
             </h3>
             {!bg ? (
-              <p className="hud-stat">{bgError ?? "Reading…"}</p>
+              <p className="hud-stat">{bgError ?? t("Reading…")}</p>
             ) : (
               <>
                 <label className="settings-row settings-check">
                   <span className="settings-label">
-                    Check my drives once a day
+                    {t("Check my drives once a day")}
                     <span className="settings-hint">
-                      Runs without opening a window, through Windows' Task Scheduler, and sends a notification when a
-                      drive is getting full. A check missed while the PC was off runs at the next sign-in.
+                      {t("Runs without opening a window, through Windows' Task Scheduler, and sends a notification when a drive is getting full. A check missed while the PC was off runs at the next sign-in.")}
                     </span>
                   </span>
                   <input
@@ -481,42 +517,30 @@ export function SettingsDialog({
                   />
                 </label>
                 <div className="settings-row">
-                  <span className="settings-label">At</span>
-                  <select
-                    className="filter-select"
-                    aria-label="Time of the daily check"
+                  <span className="settings-label">{t("At")}</span>
+                  <Select
+                    label={t("Time of the daily check")}
                     value={bg.hour}
                     disabled={bgBusy}
-                    onChange={(e) => updateBg({ ...bg, hour: Number(e.target.value) })}
-                  >
-                    {Array.from({ length: 24 }, (_, h) => (
-                      <option key={h} value={h}>
-                        {String(h).padStart(2, "0")}:00
-                      </option>
-                    ))}
-                  </select>
+                    options={Array.from({ length: 24 }, (_, h) => ({ value: h, label: `${String(h).padStart(2, "0")}:00` }))}
+                    onChange={(hour) => updateBg({ ...bg, hour })}
+                  />
                 </div>
                 <div className="settings-row">
-                  <span className="settings-label">Warn when a drive has less free than</span>
-                  <select
-                    className="filter-select"
-                    aria-label="Warn when a drive has less free than"
+                  <span className="settings-label">{t("Warn when a drive has less free than")}</span>
+                  <Select
+                    label={t("Warn when a drive has less free than")}
                     value={bg.minFreePercent}
                     disabled={bgBusy}
-                    onChange={(e) => updateBg({ ...bg, minFreePercent: Number(e.target.value) })}
-                  >
-                    {[5, 10, 15, 20, 25].map((p) => (
-                      <option key={p} value={p}>
-                        {p}% of its size
-                      </option>
-                    ))}
-                  </select>
+                    options={[5, 10, 15, 20, 25].map((p) => ({ value: p, label: t("{0}% of its size", p) }))}
+                    onChange={(minFreePercent) => updateBg({ ...bg, minFreePercent })}
+                  />
                 </div>
                 <div className="settings-row settings-row-top">
                   <span className="settings-label">
-                    Also scan and keep history of
+                    {t("Also scan and keep history of")}
                     <span className="settings-hint">
-                      Takes a snapshot each day, and says when a drive grew {bg.growAlertGb} GB or more since the last one.
+                      {t("Takes a snapshot each day, and says when a drive grew {0} GB or more since the last one.", bg.growAlertGb)}
                     </span>
                   </span>
                   <div className="settings-drives">
@@ -548,16 +572,16 @@ export function SettingsDialog({
                 </div>
                 <div className="actions">
                   <Button spacing="compact" iconBefore={BellRing} loading={bgBusy} onClick={checkNow}>
-                    Check now
+                    {t("Check now")}
                   </Button>
                   <span className="hud-stat">
-                    {bg.enabled ? (scheduled ? "Scheduled in Task Scheduler." : "Not scheduled yet.") : "Off."}
+                    {bg.enabled ? (scheduled ? t("Scheduled in Task Scheduler.") : t("Not scheduled yet.")) : t("Off.")}
                   </span>
                 </div>
                 {findings && (
                   <p className="settings-hint">
                     {findings.length === 0
-                      ? "Nothing to report: every drive has room to spare."
+                      ? t("Nothing to report: every drive has room to spare.")
                       : findings.map((f) => `${f.title}. ${f.body}`).join(" ")}
                   </p>
                 )}
@@ -568,18 +592,17 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-file">
             <h3 className="eyebrow" id="set-file">
-              Settings file
+              {t("Settings file")}
             </h3>
             <p className="settings-hint">
-              Everything set here, saved searches and list columns, in one file: to keep a copy, or to set up another PC
-              the same way.
+              {t("Everything set here, saved searches and list columns, in one file: to keep a copy, or to set up another PC the same way.")}
             </p>
             <div className="actions">
               <Button spacing="compact" iconBefore={FileDown} onClick={saveSettingsFile}>
-                Export…
+                {t("Export…")}
               </Button>
               <Button spacing="compact" iconBefore={FileUp} onClick={loadSettingsFile}>
-                Import…
+                {t("Import…")}
               </Button>
             </div>
             {fileNote && <p className="settings-hint">{fileNote}</p>}
@@ -587,20 +610,20 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-admin">
             <h3 className="eyebrow" id="set-admin">
-              Administrator
+              {t("Administrator")}
             </h3>
             <div className="settings-row">
               <span className="settings-label">
-                {elevated ? "Running as administrator" : "Running normally"}
+                {elevated ? t("Running as administrator") : t("Running normally")}
                 <span className="settings-hint">
                   {elevated
-                    ? "Every folder can be read, and whole NTFS drives are read from their file table in a few seconds."
-                    : "As administrator, Disq Studio can read folders your account can't, and reads whole NTFS drives from their file table in a few seconds."}
+                    ? t("Every folder can be read, and whole NTFS drives are read from their file table in a few seconds.")
+                    : t("As administrator, Disq Studio can read folders your account can't, and reads whole NTFS drives from their file table in a few seconds.")}
                 </span>
               </span>
               {!elevated && (
                 <Button spacing="compact" iconBefore={ShieldCheck} onClick={onRelaunchAsAdmin}>
-                  Restart as administrator
+                  {t("Restart as administrator")}
                 </Button>
               )}
             </div>
@@ -608,26 +631,26 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-updates">
             <h3 className="eyebrow" id="set-updates">
-              Updates
+              {t("Updates")}
             </h3>
             <div className="settings-row">
               <span className="settings-label">
                 {updateState === "found" && update
-                  ? `Disq Studio ${update.version} is available`
+                  ? t("Disq Studio {0} is available", update.version)
                   : updateState === "none"
-                    ? "Disq Studio is up to date"
+                    ? t("Disq Studio is up to date")
                     : updateState === "installing"
-                      ? "Installing the update…"
-                      : "Checks for a new version once a day"}
+                      ? t("Installing the update…")
+                      : t("Checks for a new version once a day")}
                 <span className="settings-hint">
                   {updateState === "found"
-                    ? "It installs on its own and Disq Studio starts again, where you were."
-                    : updateNote ?? "New versions come from the project's releases on GitHub, signed so only real ones install."}
+                    ? t("It installs on its own and Disq Studio starts again, where you were.")
+                    : updateNote ?? t("New versions come from the project's releases on GitHub, signed so only real ones install.")}
                 </span>
               </span>
               {updateState === "found" ? (
                 <Button spacing="compact" appearance="primary" iconBefore={CloudDownload} onClick={install}>
-                  Install and restart
+                  {t("Install and restart")}
                 </Button>
               ) : (
                 <Button
@@ -636,7 +659,7 @@ export function SettingsDialog({
                   loading={updateState === "checking" || updateState === "installing"}
                   onClick={checkForUpdate}
                 >
-                  Check now
+                  {t("Check now")}
                 </Button>
               )}
             </div>
@@ -645,18 +668,20 @@ export function SettingsDialog({
 
           <section className="settings-section" aria-labelledby="set-about">
             <h3 className="eyebrow" id="set-about">
-              About
+              {t("About")}
             </h3>
             <p className="dialog-text">
-              Disq Studio{version ? ` ${version}` : ""}. Everything stays on this PC: Disq Studio doesn't send your files, folder
-              names or usage anywhere.
+              {t(
+                "Disq Studio {0}. Everything stays on this PC: Disq Studio doesn't send your files, folder names or usage anywhere.",
+                version ?? "",
+              )}
             </p>
           </section>
         </div>
 
         <div className="modal-footer">
           <Button ref={doneRef} appearance="primary" onClick={onClose}>
-            Done
+            {t("Done")}
           </Button>
         </div>
       </div>

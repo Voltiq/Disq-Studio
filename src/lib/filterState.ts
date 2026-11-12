@@ -1,6 +1,7 @@
 import { CATEGORY_LABEL, extsOf, knownExts, type Category } from "./fileTypes";
 import { formatBytes } from "./format";
 import type { FilterQuery } from "./types";
+import { t } from "./i18n";
 
 /** What the filter bar's controls are set to; turned into a query by `toQuery`. */
 export interface FilterState {
@@ -43,9 +44,9 @@ export function sameFilter(a: FilterState, b: FilterState): boolean {
 
 const AGE_LABEL: Record<FilterState["age"], string> = {
   any: "",
-  recent: "changed in 30 days",
-  "1y": "unchanged 1 year",
-  "3y": "unchanged 3 years",
+  recent: t("changed in 30 days"),
+  "1y": t("unchanged 1 year"),
+  "3y": t("unchanged 3 years"),
 };
 
 /** A short name for a saved search, from what it's set to. */

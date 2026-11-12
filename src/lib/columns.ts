@@ -3,6 +3,8 @@
  * Name always shows and takes what's left; the others have a width in pixels.
  */
 
+import { t } from "./i18n";
+
 export type ColumnKey = "name" | "size" | "share" | "files" | "modified";
 export type SortDir = "asc" | "desc";
 
@@ -16,11 +18,11 @@ export interface ColumnLayout {
 }
 
 export const COLUMN_LABEL: Record<ColumnKey, string> = {
-  name: "Name",
-  size: "Size",
-  share: "Share",
-  files: "Files",
-  modified: "Modified",
+  name: t("Name"),
+  size: t("Size"),
+  share: t("Share"),
+  files: t("Files"),
+  modified: t("Modified"),
 };
 
 export const OPTIONAL_COLUMNS: Exclude<ColumnKey, "name">[] = ["size", "share", "files", "modified"];

@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
+use crate::i18n::tr;
 use crate::tree::{Entry, Kind, SizeMode, Tree};
 
 #[derive(Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -205,7 +206,7 @@ pub fn human(bytes: u64) -> String {
         i += 1;
     }
     let digits = if v < 10.0 { 2 } else if v < 100.0 { 1 } else { 0 };
-    format!("{v:.digits$} {}", UNITS[i])
+    format!("{} {}", crate::i18n::decimal(v, digits), UNITS[i])
 }
 
 fn esc(s: &str) -> String {
@@ -214,18 +215,19 @@ fn esc(s: &str) -> String {
 
 fn html(tree: &Tree, id: u32, rows: &[Row]) -> String {
     let top = &rows[0];
-    let mode = if tree.mode == SizeMode::Allocated { "on disk" } else { "size" };
+    let l = |text: &str| esc(&tr(text, &[]));
+    let mode = if tree.mode == SizeMode::Allocated { l("on disk") } else { l("size") };
     let filtered = tree.filter.is_some();
     let mut s = String::with_capacity(64 * 1024 + rows.len() * 200);
     let (y, mo, d, h, mi, _) = civil(now_ms());
     let _ = write!(
         s,
         r#"<!doctype html>
-<html lang="en">
+<html lang="{lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Disq Studio report: {title}</title>
+<title>{page_title}</title>
 <style>
 :root {{ --bg:#f6f6f9; --card:#fff; --text:#16171d; --sub:#5b5e6b; --line:#e3e4ea; --accent:#6457f0; --bar:#e9e8fd; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#0f1014; --card:#17181e; --text:#eceef4; --sub:#9a9eae; --line:#2a2c35; --bar:#2a2752; }} }}
@@ -249,19 +251,25 @@ tr + tr td {{ border-top:1px solid var(--line); }}
 <body>
 <main>
 <section class="card">
-<div class="sub">Disq Studio report{filter_note}</div>
+<div class="sub">{report}{filter_note}</div>
 <h1>{title}</h1>
 <div class="stats">
-<div class="stat"><span class="sub">Total ({mode})</span><b>{total}</b></div>
-<div class="stat"><span class="sub">Files</span><b>{files}</b></div>
-<div class="stat"><span class="sub">Folders</span><b>{folders}</b></div>
-<div class="stat"><span class="sub">On disk</span><b>{alloc}</b></div>
+<div class="stat"><span class="sub">{total_label}</span><b>{total}</b></div>
+<div class="stat"><span class="sub">{files_label}</span><b>{files}</b></div>
+<div class="stat"><span class="sub">{folders_label}</span><b>{folders}</b></div>
+<div class="stat"><span class="sub">{on_disk_label}</span><b>{alloc}</b></div>
 </div>
 </section>
 "#,
+        lang = if crate::i18n::german() { "de" } else { "en" },
+        page_title = esc(&tr("Disq Studio report: {0}", &[&top.path])),
         title = esc(&top.path),
-        filter_note = if filtered { " · filtered: only matching files count" } else { "" },
-        mode = mode,
+        report = l("Disq Studio report"),
+        filter_note = if filtered { l(" · filtered: only matching files count") } else { String::new() },
+        total_label = esc(&tr("Total ({0})", &[&mode])),
+        files_label = l("Files"),
+        folders_label = l("Folders"),
+        on_disk_label = l("On disk"),
         total = human(top.size),
         files = top.files,
         folders = top.folders,
@@ -269,7 +277,16 @@ tr + tr td {{ border-top:1px solid var(--line); }}
     );
 
     // Contents, indented, with each item's share of its parent.
-    s.push_str(r#"<section class="card"><h2>Contents</h2><table><thead><tr><th>Name</th><th class="num">Size</th><th class="num">Share</th><th></th><th class="num">Files</th><th>Modified</th></tr></thead><tbody>"#);
+    let _ = write!(
+        s,
+        r#"<section class="card"><h2>{}</h2><table><thead><tr><th>{}</th><th class="num">{}</th><th class="num">{}</th><th></th><th class="num">{}</th><th>{}</th></tr></thead><tbody>"#,
+        l("Contents"),
+        l("Name"),
+        l("Size"),
+        l("Share"),
+        l("Files"),
+        l("Modified")
+    );
     for r in rows {
         let share = r.size as f64 / r.parent_size.max(1) as f64;
         let is_dir = matches!(r.kind, Kind::Dir | Kind::Denied);
@@ -291,20 +308,34 @@ tr + tr td {{ border-top:1px solid var(--line); }}
 
     // File types and the largest files.
     let exts = tree.extensions(id, 15);
-    s.push_str(r#"<section class="card"><h2>File types</h2><table><thead><tr><th>Extension</th><th class="num">Files</th><th class="num">Size</th><th></th></tr></thead><tbody>"#);
+    let _ = write!(
+        s,
+        r#"<section class="card"><h2>{}</h2><table><thead><tr><th>{}</th><th class="num">{}</th><th class="num">{}</th><th></th></tr></thead><tbody>"#,
+        l("File types"),
+        l("Extension"),
+        l("Files"),
+        l("Size")
+    );
     let biggest = exts.first().map_or(1, |e| e.bytes.max(1));
     for e in &exts {
         let _ = write!(
             s,
             r#"<tr><td>{ext}</td><td class="num">{count}</td><td class="num">{size}</td><td class="bar"><div><span style="width:{w:.1}%"></span></div></td></tr>"#,
-            ext = if e.ext.is_empty() { "no extension".to_string() } else { format!(".{}", esc(&e.ext)) },
+            ext = if e.ext.is_empty() { l("no extension") } else { format!(".{}", esc(&e.ext)) },
             count = e.count,
             size = human(e.bytes),
             w = e.bytes as f64 * 100.0 / biggest as f64,
         );
     }
     s.push_str("</tbody></table></section>");
-    s.push_str(r#"<section class="card"><h2>Largest files</h2><table><thead><tr><th>File</th><th class="num">Size</th><th>Modified</th></tr></thead><tbody>"#);
+    let _ = write!(
+        s,
+        r#"<section class="card"><h2>{}</h2><table><thead><tr><th>{}</th><th class="num">{}</th><th>{}</th></tr></thead><tbody>"#,
+        l("Largest files"),
+        l("File"),
+        l("Size"),
+        l("Modified")
+    );
     for f in tree.largest(id, 50) {
         let _ = write!(
             s,
@@ -316,8 +347,11 @@ tr + tr td {{ border-top:1px solid var(--line); }}
     }
     let _ = write!(
         s,
-        "</tbody></table></section><footer>Made by Disq Studio {v} on {y:04}-{mo:02}-{d:02} {h:02}:{mi:02} UTC. Sizes in binary units (1 KB = 1,024 bytes).</footer></main></body></html>\n",
-        v = env!("CARGO_PKG_VERSION"),
+        "</tbody></table></section><footer>{}</footer></main></body></html>\n",
+        esc(&tr(
+            "Made by Disq Studio {0} on {1} UTC. Sizes in binary units (1 KB = 1,024 bytes).",
+            &[env!("CARGO_PKG_VERSION"), &format!("{y:04}-{mo:02}-{d:02} {h:02}:{mi:02}")]
+        )),
     );
     s
 }

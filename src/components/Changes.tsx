@@ -7,6 +7,7 @@ import type { CompareSummary, CompareTop, DiffEntry, SizeMode } from "../lib/typ
 import { cx } from "../lib/utils";
 import { Button, IconButton } from "./ui/Button";
 import { EmptyState, Spinner } from "./ui/Feedback";
+import { t, locale } from "../lib/i18n";
 
 interface ChangesProps {
   summary: CompareSummary;
@@ -23,11 +24,11 @@ interface ChangesProps {
 type Tab = "folders" | "grew" | "shrank" | "added" | "removed";
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "folders", label: "Folder by folder" },
-  { key: "grew", label: "Grew" },
-  { key: "shrank", label: "Shrank" },
-  { key: "added", label: "New" },
-  { key: "removed", label: "Gone" },
+  { key: "folders", label: t("Folder by folder") },
+  { key: "grew", label: t("Grew") },
+  { key: "shrank", label: t("Shrank") },
+  { key: "added", label: t("New") },
+  { key: "removed", label: t("Gone") },
 ];
 
 function change(e: DiffEntry): number {
@@ -71,43 +72,47 @@ export function Changes({ summary, sizeMode, version, onReveal, onShow, onClose,
   const list = tab === "folders" ? rows : top?.[tab] ?? null;
   const largest = useMemo(() => Math.max(1, ...(list ?? []).map((e) => Math.abs(change(e)))), [list]);
   const total = summary.now - summary.before;
-  const measure = sizeMode === "allocated" ? "on disk" : "size";
+  const measure = sizeMode === "allocated" ? t("on disk") : t("size");
 
   return (
-    <section className="panel dup-panel changes" aria-label="Changes since a snapshot">
+    <section className="panel dup-panel changes" aria-label={t("Changes since a snapshot")}>
       <header className="dup-toolbar">
         <div className="dup-scope">
-          <span className="eyebrow">Changes in {summary.meta.root} since</span>
+          <span className="eyebrow">{t("Changes in {0} since", summary.meta.root)}</span>
           <span className="panel-title">{formatDateTime(summary.meta.scannedAt)}</span>
         </div>
         <div className="dup-controls">
           <Button iconBefore={X} onClick={onClose}>
-            Stop comparing
+            {t("Stop comparing")}
           </Button>
         </div>
       </header>
 
       <div className="dup-summary">
         <div className="scan-stat">
-          <span className="eyebrow">Then</span>
+          <span className="eyebrow">{t("Then")}</span>
           <span className="value">{formatBytes(summary.before)}</span>
         </div>
         <div className="scan-stat">
-          <span className="eyebrow">Now</span>
+          <span className="eyebrow">{t("Now")}</span>
           <span className="value">{formatBytes(summary.now)}</span>
         </div>
         <div className="scan-stat">
-          <span className="eyebrow">Change</span>
+          <span className="eyebrow">{t("Change")}</span>
           <span className={cx("value", total > 0 ? "is-up" : total < 0 ? "is-down" : undefined)}>{formatChange(total)}</span>
         </div>
         <p className="dup-summary-note">
-          By {measure}. Files: {summary.filesBefore.toLocaleString()} then, {summary.filesNow.toLocaleString()} now. Items are
-          matched by path.
+          {t(
+            "By {0}. Files: {1} then, {2} now. Items are matched by path.",
+            measure,
+            summary.filesBefore.toLocaleString(locale()),
+            summary.filesNow.toLocaleString(locale()),
+          )}
         </p>
       </div>
 
       <div className="dup-bulk">
-        <div className="segmented" role="tablist" aria-label="Show">
+        <div className="segmented" role="tablist" aria-label={t("Show")}>
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -122,7 +127,7 @@ export function Changes({ summary, sizeMode, version, onReveal, onShow, onClose,
           ))}
         </div>
         {tab === "folders" && (
-          <nav className="crumbs changes-crumbs" aria-label="Folder">
+          <nav className="crumbs changes-crumbs" aria-label={t("Folder")}>
             {trail.map((c, i) => (
               <span key={c.id} style={{ display: "contents" }}>
                 {i > 0 && <ChevronRight size={14} className="crumb-sep" aria-hidden="true" />}
@@ -138,16 +143,16 @@ export function Changes({ summary, sizeMode, version, onReveal, onShow, onClose,
       <div className="dup-list changes-list" role="list">
         {!list ? (
           <div className="dup-empty">
-            <Spinner size={22} label="Comparing" />
+            <Spinner size={22} label={t("Comparing")} />
           </div>
         ) : list.length === 0 ? (
-          <EmptyState icon={ArrowLeftRight} title="Nothing here" compact>
-            {tab === "folders" ? "This folder is empty in both scans." : "No items of this kind changed."}
+          <EmptyState icon={ArrowLeftRight} title={t("Nothing here")} compact>
+            {tab === "folders" ? t("This folder is empty in both scans.") : t("No items of this kind changed.")}
           </EmptyState>
         ) : (
           list.map((e) => {
             const delta = change(e);
-            const status = e.before == null ? "New" : e.now == null ? "Gone" : delta === 0 ? "" : delta > 0 ? "Grew" : "Shrank";
+            const status = e.before == null ? t("New") : e.now == null ? t("Gone") : delta === 0 ? "" : delta > 0 ? t("Grew") : t("Shrank");
             const dir = e.path.slice(0, Math.max(0, e.path.length - e.name.length - 1));
             return (
               <div
@@ -183,10 +188,10 @@ export function Changes({ summary, sizeMode, version, onReveal, onShow, onClose,
                 </span>
                 <span className="dup-file-actions">
                   {e.id != null && (
-                    <IconButton icon={ChevronRight} label="Show on the map" spacing="compact" onClick={() => onShow(e.id!)} />
+                    <IconButton icon={ChevronRight} label={t("Show on the map")} spacing="compact" onClick={() => onShow(e.id!)} />
                   )}
                   {e.now != null && (
-                    <IconButton icon={FolderSearch} label="Show in Explorer" spacing="compact" onClick={() => onReveal(e.path)} />
+                    <IconButton icon={FolderSearch} label={t("Show in Explorer")} spacing="compact" onClick={() => onReveal(e.path)} />
                   )}
                 </span>
               </div>
@@ -198,8 +203,8 @@ export function Changes({ summary, sizeMode, version, onReveal, onShow, onClose,
         <footer className="dup-footer">
           <span>
             {tab === "added" || tab === "removed"
-              ? "The largest new or gone items; a new folder is listed once, not every file in it."
-              : "Up to 150 files that changed most. Folders are compared on the Folder by folder tab."}
+              ? t("The largest new or gone items; a new folder is listed once, not every file in it.")
+              : t("Up to 150 files that changed most. Folders are compared on the Folder by folder tab.")}
           </span>
         </footer>
       )}

@@ -5,6 +5,7 @@ import { fileColor, readColors, withFreeSpace, ZoomGhost, type ColorBy, type Col
 import type { Kind, MapNode } from "../lib/types";
 import { Spinner } from "./ui/Feedback";
 import { MapTip } from "./Treemap";
+import { t, locale } from "../lib/i18n";
 
 interface SunburstProps {
   rootId: number;
@@ -81,7 +82,7 @@ function layoutArcs(root: MapNode): Arc[] {
       } else {
         arcs.push({
           id: -node.id - 1,
-          name: `${it.count?.toLocaleString() ?? ""} smaller items`,
+          name: `${it.count?.toLocaleString(locale()) ?? ""} smaller items`,
           size: it.size,
           kind: "rest",
           modified: 0,
@@ -206,7 +207,7 @@ function draw(
     const r = g.hole + (a.depth - 0.5) * g.ring;
     const room = (a.a1 - a.a0) * r - 8;
     if (room < 44 || g.ring < 18) continue;
-    const label = a.kind === "free" ? "Free space" : a.name;
+    const label = a.kind === "free" ? t("Free space") : a.name;
     ctx.font = `600 11px ${p.font}`;
     const text = fitText(ctx, label, Math.min(room, 200));
     if (!text) continue;
@@ -472,9 +473,7 @@ export function Sunburst({
   }
 
   const announce = selectedArc
-    ? `${selectedArc.name}, ${formatBytes(selectedArc.size)}, ${formatShare(selectedArc.size, total)} of view${
-        selectedArc.kind === "dir" ? ", folder" : ""
-      }`
+    ? t("{0}, {1}, {2} of view{3}", selectedArc.name, formatBytes(selectedArc.size), formatShare(selectedArc.size, total), selectedArc.kind === "dir" ? t(", folder") : "")
     : "";
 
   return (
@@ -482,7 +481,7 @@ export function Sunburst({
       <canvas
         ref={baseRef}
         tabIndex={0}
-        aria-label="Sunburst of the current folder. Left and Right move along a ring, Down goes out a ring, Up comes back, Enter zooms in."
+        aria-label={t("Sunburst of the current folder. Left and Right move along a ring, Down goes out a ring, Up comes back, Enter zooms in.")}
         aria-describedby="map-selection"
         role="application"
         onKeyDown={onKeyDown}
@@ -523,7 +522,7 @@ export function Sunburst({
       </p>
       {loading && !data && (
         <div className="map-loading">
-          <Spinner size={24} label="Drawing the chart" />
+          <Spinner size={24} label={t("Drawing the chart")} />
         </div>
       )}
       {hover && <MapTip cell={hover.arc} x={hover.x} y={hover.y} total={total} colorBy={colorBy} />}

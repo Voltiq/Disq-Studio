@@ -9,6 +9,8 @@ import { ConfirmBulk } from "./ConfirmBulk";
 import type { BasketItem } from "./Duplicates";
 import { Button, IconButton } from "./ui/Button";
 import { EmptyState, Spinner } from "./ui/Feedback";
+import { t, te, locale } from "../lib/i18n";
+import { tx } from "../lib/tx";
 
 const PREVIEW = 5;
 
@@ -153,30 +155,30 @@ export function Cleanup({
   }
 
   return (
-    <section className="panel dup-panel" aria-label="Cleanup suggestions">
+    <section className="panel dup-panel" aria-label={t("Cleanup suggestions")}>
       <header className="dup-toolbar">
         <div className="dup-scope">
-          <span className="eyebrow">Cleanup suggestions in</span>
+          <span className="eyebrow">{t("Cleanup suggestions in")}</span>
           <span className="panel-title">{scanPath}</span>
-          <span className="hud-stat">Caches, temp files and build output that apps rebuild on their own</span>
+          <span className="hud-stat">{t("Caches, temp files and build output that apps rebuild on their own")}</span>
         </div>
         <div className="dup-controls">
           <Button iconBefore={RefreshCw} onClick={load} disabled={!categories}>
-            Look again
+            {t("Look again")}
           </Button>
         </div>
       </header>
 
       {!categories && (
         <div className="dup-empty">
-          <Spinner size={24} label="Looking for junk" />
+          <Spinner size={24} label={t("Looking for junk")} />
         </div>
       )}
 
       {categories && categories.length === 0 && (
         <div className="dup-empty">
-          <EmptyState icon={Sparkles} title="Nothing to clean up here">
-            No caches, temp files or build output of 1 MB or more were found in this scan.
+          <EmptyState icon={Sparkles} title={t("Nothing to clean up here")}>
+            {t("No caches, temp files or build output of 1 MB or more were found in this scan.")}
           </EmptyState>
         </div>
       )}
@@ -185,15 +187,15 @@ export function Cleanup({
         <>
           <div className="dup-summary">
             <div className="scan-stat">
-              <span className="eyebrow">Safe to remove</span>
+              <span className="eyebrow">{t("Safe to remove")}</span>
               <span className="value">{formatBytes(totals.safe)}</span>
             </div>
             <div className="scan-stat">
-              <span className="eyebrow">Review first</span>
+              <span className="eyebrow">{t("Review first")}</span>
               <span className="value">{formatBytes(totals.review)}</span>
             </div>
             <div className="scan-stat">
-              <span className="eyebrow">Selected</span>
+              <span className="eyebrow">{t("Selected")}</span>
               <span className="value">{formatBytes(selectedBytes)}</span>
             </div>
             <div className="dup-bulk" style={{ padding: 0 }}>
@@ -207,11 +209,11 @@ export function Cleanup({
                   )
                 }
               >
-                Select everything safe
+                {t("Select everything safe")}
               </Button>
               {selected.size > 0 && (
                 <Button spacing="compact" appearance="subtle" iconBefore={X} onClick={() => setSelected(new Set())}>
-                  Clear
+                  {t("Clear")}
                 </Button>
               )}
             </div>
@@ -239,28 +241,28 @@ export function Cleanup({
                             if (el) el.indeterminate = picked > 0 && picked < ids.length;
                           }}
                           onChange={(e) => setMany(ids, e.target.checked)}
-                          aria-label={`Select all ${c.label}`}
+                          aria-label={t("Select all {0}", te(c.label))}
                         />
                       )}
                       <span className="dup-file-text">
-                        <span className="dup-group-name">{c.label}</span>
-                        <span className="junk-desc">{c.description}</span>
+                        <span className="dup-group-name">{te(c.label)}</span>
+                        <span className="junk-desc">{te(c.description)}</span>
                       </span>
                     </label>
                     {c.safety === "safe" ? (
                       <span className="lozenge lozenge-success">
                         <ShieldCheck size={12} aria-hidden="true" />
-                        Safe
+                        {t("Safe")}
                       </span>
                     ) : infoOnly ? (
                       <span className="lozenge lozenge-information">
                         <Info size={12} aria-hidden="true" />
-                        For information
+                        {t("For information")}
                       </span>
                     ) : (
                       <span className="lozenge lozenge-warning">
                         <TriangleAlert size={12} aria-hidden="true" />
-                        Review first
+                        {t("Review first")}
                       </span>
                     )}
                     <span className="junk-total">
@@ -279,7 +281,7 @@ export function Cleanup({
                               type="checkbox"
                               checked={checked}
                               onChange={() => setMany([item.id], !checked)}
-                              aria-label={`Select ${item.path}`}
+                              aria-label={t("Select {0}", item.path)}
                             />
                           )}
                           <EntryIcon name={name} kind={item.kind} />
@@ -294,7 +296,7 @@ export function Cleanup({
                         <span className="junk-size mono">{formatBytes(item.size)}</span>
                         <IconButton
                           icon={FolderSearch}
-                          label="Show in Explorer"
+                          label={t("Show in Explorer")}
                           spacing="compact"
                           onClick={() => onReveal(item.path)}
                         />
@@ -304,8 +306,8 @@ export function Cleanup({
                   {c.items.length > PREVIEW && (
                     <button className="junk-more" onClick={() => toggleExpanded(c.key)} aria-expanded={open}>
                       <ChevronDown size={14} aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : undefined }} />
-                      {open ? "Show fewer" : `Show all ${c.items.length.toLocaleString()}`}
-                      {c.totalItems > c.items.length && ` (largest ${c.items.length} of ${c.totalItems.toLocaleString()})`}
+                      {open ? t("Show fewer") : t("Show all {0}", c.items.length.toLocaleString(locale()))}
+                      {c.totalItems > c.items.length && t(" (largest {0} of {1})", c.items.length, c.totalItems.toLocaleString(locale()))}
                     </button>
                   )}
                 </article>
@@ -317,11 +319,10 @@ export function Cleanup({
             <span>
               {selected.size > 0 ? (
                 <>
-                  <b>{plural(selected.size, "item", "items")}</b> selected · frees about{" "}
-                  <b className="mono">{formatBytes(selectedBytes)}</b>
+                  {tx("{0} selected · frees about {1}", <b>{plural(selected.size, "item", "items")}</b>, <b className="mono">{formatBytes(selectedBytes)}</b>)}
                 </>
               ) : (
-                "Tick what you want gone. Nothing is removed until you confirm."
+                t("Tick what you want gone. Nothing is removed until you confirm.")
               )}
             </span>
             <div className="dup-footer-actions">
@@ -329,13 +330,13 @@ export function Cleanup({
                 appearance="subtle"
                 iconBefore={ShoppingBasket}
                 disabled={selected.size === 0}
-                tooltip="Collect them in the basket and recycle everything there in one go"
+                tooltip={t("Collect them in the basket and recycle everything there in one go")}
                 onClick={addToBasket}
               >
-                Add to basket
+                {t("Add to basket")}
               </Button>
               <Button appearance="danger" iconBefore={Trash2} disabled={selected.size === 0} onClick={() => setConfirming(true)}>
-                Move to Recycle Bin
+                {t("Move to Recycle Bin")}
               </Button>
             </div>
           </footer>
@@ -350,7 +351,7 @@ export function Cleanup({
           busy={busy}
           note={
             <>
-              Files a program is still using are skipped and listed afterwards.
+              {t("Files a program is still using are skipped and listed afterwards.")}
             </>
           }
           onConfirm={recycle}

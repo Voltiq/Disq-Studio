@@ -36,6 +36,9 @@ jobs:
       - name: Type-check and build the interface
         run: npm run build
 
+      - name: Interface tests (every string has a German translation)
+        run: npm test
+
       - name: Rust tests
         working-directory: src-tauri
         run: cargo test --lib

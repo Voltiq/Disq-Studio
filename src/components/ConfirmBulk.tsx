@@ -6,6 +6,8 @@ import { confirmLabel } from "../lib/recycle";
 import { RecycleSafety } from "./RecycleSafety";
 import { Button, IconButton } from "./ui/Button";
 import { SectionMessage } from "./ui/Feedback";
+import { t, locale } from "../lib/i18n";
+import { tx } from "../lib/tx";
 
 interface ConfirmBulkProps {
   ids: number[];
@@ -49,16 +51,17 @@ export function ConfirmBulk({ ids, bytes, paths, busy, note, onConfirm, onDelete
         <div className="modal-header">
           <h2 className="modal-title" id="bulk-title">
             {permanent
-              ? `Delete ${plural(count, "item", "items")} permanently?`
-              : `Move ${plural(count, "item", "items")} to the Recycle Bin?`}
+              ? t("Delete {0} permanently?", plural(count, "item", "items"))
+              : t("Move {0} to the Recycle Bin?", plural(count, "item", "items"))}
           </h2>
-          <IconButton icon={X} label="Close" onClick={onClose} />
+          <IconButton icon={X} label={t("Close")} onClick={onClose} />
         </div>
         {permanent ? (
           <div className="modal-body">
-            <SectionMessage appearance="danger" title="This can't be undone">
-              Nothing goes to the Recycle Bin: {plural(count, "item", "items")} ({formatBytes(bytes)}) will be deleted for
-              good, with no way to restore {count === 1 ? "it" : "them"}.
+            <SectionMessage appearance="danger" title={t("This can't be undone")}>
+              {count === 1
+                ? t("Nothing goes to the Recycle Bin: 1 item ({0}) will be deleted for good, with no way to restore it.", formatBytes(bytes))
+                : t("Nothing goes to the Recycle Bin: {0} items ({1}) will be deleted for good, with no way to restore them.", count.toLocaleString(locale()), formatBytes(bytes))}
             </SectionMessage>
             <ul className="dup-confirm-list">
               {paths.map((p, i) => (
@@ -66,14 +69,16 @@ export function ConfirmBulk({ ids, bytes, paths, busy, note, onConfirm, onDelete
                   {p}
                 </li>
               ))}
-              {count > paths.length && <li className="hud-stat">and {(count - paths.length).toLocaleString()} more</li>}
+              {count > paths.length && <li className="hud-stat">{t("and {0} more", (count - paths.length).toLocaleString(locale()))}</li>}
             </ul>
           </div>
         ) : (
         <div className="modal-body">
           <p className="dialog-text">
-            This frees about <span className="path-text">{formatBytes(bytes)}</span> once the Recycle Bin is emptied,
-            and you can restore anything from there until then.
+            {tx(
+              "This frees about {0} once the Recycle Bin is emptied, and you can restore anything from there until then.",
+              <span className="path-text">{formatBytes(bytes)}</span>,
+            )}
           </p>
           {note && <div className="dialog-text">{note}</div>}
           <ul className="dup-confirm-list">
@@ -82,7 +87,7 @@ export function ConfirmBulk({ ids, bytes, paths, busy, note, onConfirm, onDelete
                 {p}
               </li>
             ))}
-            {count > paths.length && <li className="hud-stat">and {(count - paths.length).toLocaleString()} more</li>}
+            {count > paths.length && <li className="hud-stat">{t("and {0} more", (count - paths.length).toLocaleString(locale()))}</li>}
           </ul>
           <RecycleSafety
             ids={ids}
@@ -96,21 +101,21 @@ export function ConfirmBulk({ ids, bytes, paths, busy, note, onConfirm, onDelete
           {permanent ? (
             <>
               <Button appearance="subtle" onClick={() => setPermanent(false)} disabled={busy}>
-                Back
+                {t("Back")}
               </Button>
               <Button appearance="danger" iconBefore={Trash2} loading={busy} onClick={onDeletePermanently}>
-                Delete permanently
+                {t("Delete permanently")}
               </Button>
             </>
           ) : (
             <>
               {onDeletePermanently && (
                 <Button appearance="subtle" className="footer-start" onClick={() => setPermanent(true)} disabled={busy}>
-                  Delete permanently…
+                  {t("Delete permanently…")}
                 </Button>
               )}
               <Button appearance="subtle" onClick={onClose}>
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 ref={confirmRef}

@@ -5,6 +5,8 @@ import { EntryIcon } from "../lib/icons";
 import type { BasketItem } from "./Duplicates";
 import { Button, IconButton } from "./ui/Button";
 import { EmptyState } from "./ui/Feedback";
+import { t } from "../lib/i18n";
+import { tx } from "../lib/tx";
 
 interface BasketProps {
   items: BasketItem[];
@@ -44,21 +46,23 @@ export function Basket({ items, onRemove, onClear, onReveal, onRecycleAll, onClo
       <div className="modal modal-medium basket" role="dialog" aria-modal="true" aria-labelledby="basket-title">
         <div className="modal-header">
           <h2 className="modal-title" id="basket-title">
-            Cleanup basket
+            {t("Cleanup basket")}
           </h2>
-          <IconButton ref={closeRef} icon={X} label="Close" onClick={onClose} />
+          <IconButton ref={closeRef} icon={X} label={t("Close")} onClick={onClose} />
         </div>
         <div className="modal-body">
           {items.length === 0 ? (
-            <EmptyState icon={ShoppingBasket} title="The basket is empty" compact>
-              Add things from the map (right-click › Add to basket), from Duplicates or from Cleanup, then recycle them
-              all here in one go.
+            <EmptyState icon={ShoppingBasket} title={t("The basket is empty")} compact>
+              {t("Add things from the map (right-click › Add to basket), from Duplicates or from Cleanup, then recycle them all here in one go.")}
             </EmptyState>
           ) : (
             <>
               <p className="dialog-text">
-                {plural(items.length, "item", "items")}, about <span className="path-text">{formatBytes(total)}</span> on
-                disk. Nothing is removed until you recycle them.
+                {tx(
+                  "{0}, about {1} on disk. Nothing is removed until you recycle them.",
+                  plural(items.length, "item", "items"),
+                  <span className="path-text">{formatBytes(total)}</span>,
+                )}
               </p>
               <ul className="basket-list">
                 {sorted.map((item) => {
@@ -74,8 +78,8 @@ export function Basket({ items, onRemove, onClear, onReveal, onRecycleAll, onClo
                       </span>
                       <span className="junk-size mono">{formatBytes(item.size)}</span>
                       <span className="dup-file-actions">
-                        <IconButton icon={FolderSearch} label="Show in Explorer" spacing="compact" onClick={() => onReveal(item.path)} />
-                        <IconButton icon={X} label={`Take ${name} out of the basket`} spacing="compact" onClick={() => onRemove(item.path)} />
+                        <IconButton icon={FolderSearch} label={t("Show in Explorer")} spacing="compact" onClick={() => onReveal(item.path)} />
+                        <IconButton icon={X} label={t("Take {0} out of the basket", name)} spacing="compact" onClick={() => onRemove(item.path)} />
                       </span>
                     </li>
                   );
@@ -87,14 +91,14 @@ export function Basket({ items, onRemove, onClear, onReveal, onRecycleAll, onClo
         <div className="modal-footer">
           {items.length > 0 && (
             <Button appearance="subtle" className="footer-start" onClick={onClear}>
-              Empty the basket
+              {t("Empty the basket")}
             </Button>
           )}
           <Button appearance="subtle" onClick={onClose}>
-            Close
+            {t("Close")}
           </Button>
           <Button appearance="danger" iconBefore={Trash2} disabled={items.length === 0} onClick={onRecycleAll}>
-            Recycle all
+            {t("Recycle all")}
           </Button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { formatBytes, formatElapsed } from "../lib/format";
 import type { ScanProgress, SizeMode } from "../lib/types";
 import { Button } from "./ui/Button";
 import { ProgressBar, Spinner } from "./ui/Feedback";
+import { t, locale } from "../lib/i18n";
 
 interface ScanScreenProps {
   path: string;
@@ -23,42 +24,42 @@ export function ScanScreen({ path, progress, expectedBytes, sizeMode, onCancel }
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-150)" }}>
           <Spinner size={20} />
           <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-            <span className="eyebrow">Scanning</span>
+            <span className="eyebrow">{t("Scanning")}</span>
             <h1 className="panel-title" style={{ fontSize: "1.25rem" }}>
               {path}
             </h1>
           </div>
         </div>
 
-        <ProgressBar value={fraction} indeterminate={fraction === undefined} label="Scan progress" />
+        <ProgressBar value={fraction} indeterminate={fraction === undefined} label={t("Scan progress")} />
 
         <div className="scan-stats">
           <div className="scan-stat">
-            <span className="eyebrow">Files</span>
-            <span className="value">{(progress?.files ?? 0).toLocaleString()}</span>
+            <span className="eyebrow">{t("Files")}</span>
+            <span className="value">{(progress?.files ?? 0).toLocaleString(locale())}</span>
           </div>
           <div className="scan-stat">
-            <span className="eyebrow">Folders</span>
-            <span className="value">{(progress?.dirs ?? 0).toLocaleString()}</span>
+            <span className="eyebrow">{t("Folders")}</span>
+            <span className="value">{(progress?.dirs ?? 0).toLocaleString(locale())}</span>
           </div>
           <div className="scan-stat">
-            <span className="eyebrow">{sizeMode === "allocated" ? "On disk" : "Size"}</span>
+            <span className="eyebrow">{sizeMode === "allocated" ? t("On disk") : t("Size")}</span>
             <span className="value">{formatBytes(shownBytes)}</span>
           </div>
         </div>
 
         <p className="scan-current" title={progress?.current}>
-          {"‎" + (progress?.current || "Starting…")}
+          {"‎" + (progress?.current || t("Starting…"))}
         </p>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span className="hud-stat">
             {formatElapsed(progress?.elapsedMs ?? 0)}
             {fraction !== undefined && ` · ${Math.floor(fraction * 100)}%`}
-            {!!progress?.errors && ` · ${progress.errors.toLocaleString()} folders skipped`}
+            {!!progress?.errors && t(" · {0} folders skipped", progress.errors.toLocaleString(locale()))}
           </span>
           <Button iconBefore={Square} onClick={onCancel} shortcut="Esc">
-            Cancel
+            {t("Cancel")}
           </Button>
         </div>
       </section>

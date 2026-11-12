@@ -31,6 +31,7 @@ import type {
   SizeMode,
   Volume,
 } from "./types";
+import { t, te } from "./i18n";
 
 const SIZE_MODE_KEY = "disk-studio.sizeMode";
 
@@ -51,8 +52,8 @@ export function saveSizeMode(mode: SizeMode) {
 }
 
 export const SIZE_MODE_LABEL: Record<SizeMode, string> = {
-  logical: "Size",
-  allocated: "On disk",
+  logical: t("Size"),
+  allocated: t("On disk"),
 };
 
 export const api = {
@@ -113,6 +114,8 @@ export const api = {
   /** Rescans one folder and puts it in place; ids inside it change. */
   refreshFolder: (id: number, excludes: string[]) => invoke<RefreshResult>("refresh_folder", { id, excludes }),
   isElevated: () => invoke<boolean>("is_elevated"),
+  /** Tells the Rust side the interface's language, for the notifications and reports it writes itself. */
+  setLanguage: (language: string) => invoke<void>("set_language", { language }),
   /** Restarts as administrator after Windows asks; resolves false if the user said no (otherwise the app closes). */
   relaunchAsAdmin: (path: string | null) => invoke<boolean>("relaunch_as_admin", { path }),
 };
@@ -138,8 +141,9 @@ export function onDupDone(cb: (d: DupDone) => void): Promise<UnlistenFn> {
   return listen<DupDone>("dup-done", (e) => cb(e.payload));
 }
 
+/** An error as a sentence to show, in the interface's language where the table knows it. */
 export function errorText(err: unknown): string {
-  if (typeof err === "string") return err;
-  if (err instanceof Error) return err.message;
-  return String(err);
+  if (typeof err === "string") return te(err);
+  if (err instanceof Error) return te(err.message);
+  return te(String(err));
 }

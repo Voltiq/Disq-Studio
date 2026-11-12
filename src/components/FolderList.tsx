@@ -12,6 +12,7 @@ import { MatchesList } from "./MatchesList";
 import { Button } from "./ui/Button";
 import { EmptyState, Spinner } from "./ui/Feedback";
 import type { MenuRequest } from "./ui/Menu";
+import { t, locale } from "../lib/i18n";
 
 interface FolderListProps {
   folderId: number;
@@ -157,21 +158,21 @@ export function FolderList({
     <section
       ref={panelRef}
       className="panel"
-      aria-label="Folder contents"
+      aria-label={t("Folder contents")}
       style={{ ["--row-cols" as string]: gridTemplate(fitted) }}
     >
       <header className="panel-header">
         {filter ? (
           <>
-            <div className="segmented" role="tablist" aria-label="List">
+            <div className="segmented" role="tablist" aria-label={t("List")}>
               <button
                 className={cx("segment", tab === "matches" && "is-selected")}
                 role="tab"
                 aria-selected={tab === "matches"}
                 onClick={() => setTab("matches")}
               >
-                Matches
-                <span className="badge">{filter.summary.totalHits.toLocaleString()}</span>
+                {t("Matches")}
+                <span className="badge">{filter.summary.totalHits.toLocaleString(locale())}</span>
               </button>
               <button
                 className={cx("segment", tab === "folder" && "is-selected")}
@@ -179,7 +180,7 @@ export function FolderList({
                 aria-selected={tab === "folder"}
                 onClick={() => setTab("folder")}
               >
-                This folder
+                {t("This folder")}
               </button>
             </div>
             {showMatches && filter.summary.totalHits > 0 && (
@@ -187,10 +188,10 @@ export function FolderList({
                 spacing="compact"
                 appearance="subtle"
                 iconBefore={Trash2}
-                tooltip="Move every match to the Recycle Bin, after a check of what the Recycle Bin can take"
+                tooltip={t("Move every match to the Recycle Bin, after a check of what the Recycle Bin can take")}
                 onClick={filter.onRecycleAll}
               >
-                Recycle all
+                {t("Recycle all")}
               </Button>
             )}
           </>
@@ -200,9 +201,9 @@ export function FolderList({
               {folderName}
             </h2>
             {selectedIds.length > 1 ? (
-              <span className="badge badge-primary">{selectedIds.length.toLocaleString()} selected</span>
+              <span className="badge badge-primary">{t("{0} selected", selectedIds.length.toLocaleString(locale()))}</span>
             ) : (
-              entries && <span className="badge">{entries.length.toLocaleString()}</span>
+              entries && <span className="badge">{entries.length.toLocaleString(locale())}</span>
             )}
           </>
         )}
@@ -229,20 +230,20 @@ export function FolderList({
         ref={listRef}
         role="listbox"
         aria-multiselectable="true"
-        aria-label={`Contents of ${folderName}`}
+        aria-label={t("Contents of {0}", folderName)}
         onKeyDown={onKeyDown}
         hidden={showMatches}
       >
         {!entries && (
           <div className="map-loading" style={{ position: "static", padding: "2rem" }}>
-            <Spinner size={20} label="Loading" />
+            <Spinner size={20} label={t("Loading")} />
           </div>
         )}
         {entries?.length === 0 &&
           (filter ? (
-            <EmptyState icon={FolderOpen} title="Nothing in this folder matches" compact />
+            <EmptyState icon={FolderOpen} title={t("Nothing in this folder matches")} compact />
           ) : (
-            <EmptyState icon={FolderOpen} title="This folder is empty" compact />
+            <EmptyState icon={FolderOpen} title={t("This folder is empty")} compact />
           ))}
         {entries?.map((entry) => {
           const isDir = entry.kind === "dir";
@@ -279,13 +280,13 @@ export function FolderList({
               data-tooltip={
                 isDir
                   ? `${entry.name} · ${plural(entry.files, "file", "files")}, ${plural(entry.dirs, "folder", "folders")}` +
-                    (entry.online > 0 ? ` · ${formatBytes(entry.online)} online only` : "")
+                    (entry.online > 0 ? t(" · {0} online only", formatBytes(entry.online)) : "")
                   : entry.kind === "denied"
-                    ? `${entry.name} · couldn't be read`
+                    ? t("{0} · couldn't be read", entry.name)
                     : entry.kind === "excluded"
-                      ? `${entry.name} · skipped by Settings › Folders to skip, so its size isn't counted`
+                      ? t("{0} · skipped by Settings › Folders to skip, so its size isn't counted", entry.name)
                       : entry.kind === "hardlink"
-                      ? `${entry.name} · hard link, counted once under its other name`
+                      ? t("{0} · hard link, counted once under its other name", entry.name)
                       : undefined
               }
             >

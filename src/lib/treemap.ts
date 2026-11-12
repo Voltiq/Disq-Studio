@@ -6,6 +6,7 @@
 
 import type { Kind, MapNode } from "./types";
 
+import { locale } from "./i18n";
 export interface Rect {
   x: number;
   y: number;
@@ -138,7 +139,7 @@ export function layout(root: MapNode, bounds: Rect): Cell[] {
         cells.push({
           ...cr,
           id: -node.id - 1,
-          name: `${it.restCount?.toLocaleString() ?? ""} smaller items`,
+          name: `${it.restCount?.toLocaleString(locale()) ?? ""} smaller items`,
           size: it.size,
           kind: "rest",
           depth: depth + 1,

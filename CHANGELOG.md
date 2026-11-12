@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.0 — 2026-11-12
+
+### Added
+- **German**: Disq Studio speaks German (Sie form, with Windows' own terms: Papierkorb, Datenträger,
+  Momentaufnahme). It follows Windows, or pick English or Deutsch in Settings › Appearance › Language
+  (applies at the next start; "Restart now" does it straight away). Numbers and dates follow the language
+  too, and so do the daily check's notifications and the HTML report.
+- **Own title bar**: the window has the app's icon and name, the folder in view, and minimise, maximise and
+  close buttons drawn to match the rest of the app. Drag it to move the window, double-click to maximise.
+
+### Changed
+- **Dropdowns** are drawn by the app instead of Windows: they open with a short animation, fit the theme and
+  accent, and work from the keyboard (arrows, Home/End, typing a letter, Enter, Esc).
+- Fixed a message in the Recycle Bin check that said the OneDrive warning twice.
+
 ## 1.0.0 — 2026-11-04
 
 Disk Studio is now **Disq Studio**, and open source under the MIT license.

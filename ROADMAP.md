@@ -308,3 +308,20 @@ A fast, Graphiq-styled disk space visualizer built with Tauri 2, Rust and React.
   outside OneDrive. `npm run tauri dev` still uses `src-tauri/target` (several GB, synced) unless
   `CARGO_TARGET_DIR` is set the same way.
 - Design system source: Graphiq Studio redesign (tokens copied from `FTP-Client/src/styles/tokens.css`).
+
+## v1.1 — German, title bar, dropdowns
+- [x] **German** (1.1.0): every string goes through `t()` (`src/lib/i18n.ts`, as in Inq and Uplinq Studio);
+  the English text is the key and `src/lib/de.ts` holds about 560 German strings. Sentences are whole
+  (`t("{0} free of {1}", …)`, `tx()` when a part is bold or code), so word order can change. Errors and
+  cleanup categories from Rust are translated by `te()`, which turns paths, sizes and quoted names into
+  placeholders. The Rust side translates what it shows itself (`i18n.rs`: the daily check's notifications,
+  the HTML report) and remembers the language for the daily check. Numbers and dates use the interface's
+  locale. `npm test` (vitest, also in CI and before every release) fails when a string has no German or a
+  translation loses a placeholder
+- [x] **Own title bar** (1.1.0): `decorations: false`, `TitleBar.tsx` with the icon, the name, the folder
+  in view, an Admin badge when elevated, and minimise / maximise-restore / close (red on hover, as in
+  Windows)
+- [x] **Graphiq dropdowns** (1.1.0): `ui/Select.tsx` replaces the six native `<select>`s: a portal list with
+  the spring animation of the menus, combobox / listbox roles, arrows, Home/End, type-ahead, Esc and Tab
+- [x] Checked in the preview in German: home, scan, map, list, details, duplicates, settings and the
+  language dropdown; no console errors

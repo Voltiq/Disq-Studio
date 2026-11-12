@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { CATEGORY_VAR, categoryOf, type Category } from "./fileTypes";
 import type { Kind } from "./types";
+import { t } from "./i18n";
 
 const CATEGORY_ICON: Record<Category, LucideIcon> = {
   video: Film,
@@ -51,9 +52,9 @@ export function OnlineBadge() {
     <Cloud
       size={13}
       className="online-badge"
-      aria-label="Online only"
+      aria-label={t("Online only")}
       role="img"
-      data-tooltip="Online only: stored in the cloud, not on this drive"
+      data-tooltip={t("Online only: stored in the cloud, not on this drive")}
     />
   );
 }

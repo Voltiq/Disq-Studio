@@ -433,6 +433,7 @@ export function installMockBackend() {
     // Nothing changes on disk here, so a refresh finds the same folder again.
     refresh_folder: () => new Promise((resolve) => setTimeout(() => resolve({ root: entry(0), errors: 3 }), 700)),
     is_elevated: () => false,
+    set_language: () => null,
     // As if the user said no to Windows' prompt.
     relaunch_as_admin: () => false,
     // The mock always reports through events, a little later.

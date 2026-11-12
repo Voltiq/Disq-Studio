@@ -76,6 +76,7 @@ import { applyAccent, loadPrefs, savePrefs, type Prefs } from "./lib/settings";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { Cleanup } from "./components/Cleanup";
 import { Basket } from "./components/Basket";
+import { TitleBar } from "./components/TitleBar";
 import { Changes } from "./components/Changes";
 import { ExportDialog } from "./components/ExportDialog";
 import { HistoryDialog } from "./components/HistoryDialog";
@@ -96,6 +97,7 @@ import { Treemap } from "./components/Treemap";
 import { Button, IconButton } from "./components/ui/Button";
 import { Menu, type MenuRequest } from "./components/ui/Menu";
 import { TooltipLayer } from "./components/ui/Tooltip";
+import { currentLanguage, t, locale } from "./lib/i18n";
 
 type Screen = "home" | "scanning" | "results";
 
@@ -142,7 +144,7 @@ function bulkOf(infos: NodeInfo[]): BulkRequest {
 
 const THEME_ORDER: ThemePreference[] = ["dark", "light", "system"];
 const THEME_ICON = { dark: Moon, light: Sun, system: Monitor };
-const THEME_LABEL = { dark: "Theme: dark", light: "Theme: light", system: "Theme: follow Windows" };
+const THEME_LABEL = { dark: t("Theme: dark"), light: t("Theme: light"), system: t("Theme: follow Windows") };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -232,7 +234,7 @@ export default function App() {
   const restorePlace = useRef<{ folder: string | null; selected: string | null } | null>(null);
 
   const showError = useCallback((message: string) => {
-    setToast({ kind: "error", title: "Something went wrong", description: message });
+    setToast({ kind: "error", title: t("Something went wrong"), description: message });
   }, []);
 
   // ----- Theme -----
@@ -255,6 +257,7 @@ export default function App() {
 
   useEffect(() => {
     api.isElevated().then(setElevated).catch(() => {});
+    api.setLanguage(currentLanguage()).catch(() => {});
   }, []);
 
   // A newer version: offer it once, without getting in the way.
@@ -263,10 +266,10 @@ export default function App() {
       if (!update) return;
       setToast({
         kind: "success",
-        title: `Disq Studio ${update.version} is available`,
-        description: "It installs in a moment, then Disq Studio starts again. Or later, from Settings › Updates.",
+        title: t("Disq Studio {0} is available", update.version),
+        description: t("It installs in a moment, then Disq Studio starts again. Or later, from Settings › Updates."),
         action: {
-          label: "Install and restart",
+          label: t("Install and restart"),
           onClick: () => installUpdate(update).catch((e) => showError(errorText(e))),
         },
       });
@@ -472,11 +475,11 @@ export default function App() {
         const change = after.size - before.size;
         setToast({
           kind: "success",
-          title: `Refreshed ${before.name}`,
+          title: t("Refreshed {0}", before.name),
           description:
             change === 0
-              ? `Still ${formatBytes(after.size)}.`
-              : `Now ${formatBytes(after.size)}, ${formatBytes(Math.abs(change))} ${change > 0 ? "more" : "less"} than before.`,
+              ? t("Still {0}.", formatBytes(after.size))
+              : t(change > 0 ? "Now {0}, {1} more than before." : "Now {0}, {1} less than before.", formatBytes(after.size), formatBytes(Math.abs(change))),
         });
       } catch (err) {
         showError(errorText(err));
@@ -558,7 +561,7 @@ export default function App() {
     try {
       const restarted = await api.relaunchAsAdmin(screen === "results" ? scanPath : null);
       if (!restarted) {
-        setToast({ kind: "error", title: "Still running normally", description: "Windows didn't get permission to restart Disq Studio as administrator." });
+        setToast({ kind: "error", title: t("Still running normally"), description: t("Windows didn't get permission to restart Disq Studio as administrator.") });
       }
     } catch (err) {
       showError(errorText(err));
@@ -566,7 +569,7 @@ export default function App() {
   }, [screen, scanPath, showError]);
 
   const chooseFolder = useCallback(async () => {
-    const picked = await pickFolder({ directory: true, title: "Choose a folder to scan" });
+    const picked = await pickFolder({ directory: true, title: t("Choose a folder to scan") });
     if (typeof picked === "string") startScan(picked);
   }, [startScan]);
 
@@ -680,7 +683,7 @@ export default function App() {
         ids: sel.ids,
         bytes: sel.bytes,
         paths: sel.paths,
-        note: `${plural(sel.files, "matching file", "matching files")}. A folder goes as a whole only when everything in it matches; elsewhere just the matching files go, and nothing that doesn't match is touched.`,
+        note: t("{0}. A folder goes as a whole only when everything in it matches; elsewhere just the matching files go, and nothing that doesn't match is touched.", plural(sel.files, "matching file", "matching files")),
       });
     } catch (err) {
       showError(errorText(err));
@@ -707,9 +710,9 @@ export default function App() {
       const next = [...now, ...added];
       setToast({
         kind: "success",
-        title: added.length ? `Added ${plural(added.length, "item", "items")} to the basket` : "Already in the basket",
-        description: `The basket holds ${plural(next.length, "item", "items")}, ${formatBytes(next.reduce((s, i) => s + i.size, 0))} on disk.`,
-        action: { label: "Open basket", onClick: () => setShowBasket(true) },
+        title: added.length ? t("Added {0} to the basket", plural(added.length, "item", "items")) : t("Already in the basket"),
+        description: t("The basket holds {0}, {1} on disk.", plural(next.length, "item", "items"), formatBytes(next.reduce((s, i) => s + i.size, 0))),
+        action: { label: t("Open basket"), onClick: () => setShowBasket(true) },
       });
       return next;
     });
@@ -727,10 +730,10 @@ export default function App() {
       api.listVolumes().then(setVolumes).catch(() => {});
       setToast({
         kind: r.restored ? "success" : "error",
-        title: r.restored ? `Restored ${plural(r.restored, "item", "items")}` : "Nothing was restored",
+        title: r.restored ? t("Restored {0}", plural(r.restored, "item", "items")) : t("Nothing was restored"),
         description: r.missing
-          ? `${plural(r.missing, "item wasn't", "items weren't")} in the Recycle Bin any more.`
-          : "Everything is back where it was.",
+          ? t("{0} in the Recycle Bin any more.", plural(r.missing, "item wasn't", "items weren't"))
+          : t("Everything is back where it was."),
       });
     } catch (err) {
       showError(errorText(err));
@@ -750,25 +753,32 @@ export default function App() {
 
       const moved = report.done.length - report.permanent;
       const lines: string[] = [];
-      if (report.done.length) lines.push(`${formatBytes(report.freed)} freed${moved ? " once the Recycle Bin is emptied" : ""}.`);
-      if (report.permanent) lines.push(`${plural(report.permanent, "item was", "items were")} deleted permanently, as you chose.`);
+      if (report.done.length)
+        lines.push(moved ? t("{0} freed once the Recycle Bin is emptied.", formatBytes(report.freed)) : t("{0} freed.", formatBytes(report.freed)));
+      if (report.permanent) lines.push(t("{0} deleted permanently, as you chose.", plural(report.permanent, "item was", "items were")));
       if (report.kept.length)
-        lines.push(`${plural(report.kept.length, "item was", "items were")} kept: Windows would have deleted ${report.kept.length === 1 ? "it" : "them"} permanently.`);
+        lines.push(
+          report.kept.length === 1
+            ? t("1 item was kept: Windows would have deleted it permanently.")
+            : t("{0} items were kept: Windows would have deleted them permanently.", report.kept.length),
+        );
       if (report.failed.length) {
         const some = report.failed.slice(0, 2).map((f) => f.path).join(", ");
         lines.push(
-          `${plural(report.failed.length, "item was", "items were")} skipped, most likely because a program is using ${report.failed.length === 1 ? "it" : "them"}: ${some}${report.failed.length > 2 ? "…" : ""}`,
+          report.failed.length === 1
+            ? t("1 item was skipped, most likely because a program is using it: {0}", some)
+            : t("{0} items were skipped, most likely because a program is using them: {1}{2}", report.failed.length, some, report.failed.length > 2 ? "…" : ""),
         );
       }
       setToast({
         kind: report.done.length ? "success" : "error",
         title: report.done.length
           ? moved
-            ? `Moved ${plural(moved, "item", "items")} to the Recycle Bin`
-            : `Deleted ${plural(report.permanent, "item", "items")} permanently`
-          : "Nothing was removed",
+            ? t("Moved {0} to the Recycle Bin", plural(moved, "item", "items"))
+            : t("Deleted {0} permanently", plural(report.permanent, "item", "items"))
+          : t("Nothing was removed"),
         description: lines.join(" "),
-        action: moved > 0 ? { label: "Undo", onClick: undoRecycle } : undefined,
+        action: moved > 0 ? { label: t("Undo"), onClick: undoRecycle } : undefined,
       });
     },
     [refreshFilter, setSelectedId, pruneBasket, undoRecycle],
@@ -785,11 +795,11 @@ export default function App() {
       setToast({
         kind: report.done.length ? "success" : "error",
         title: report.done.length
-          ? `Replaced ${plural(report.done.length, "copy", "copies")} with links`
-          : "Nothing was replaced",
+          ? t("Replaced {0} with links", plural(report.done.length, "copy", "copies"))
+          : t("Nothing was replaced"),
         description: [
-          report.done.length ? `${formatBytes(report.freed)} freed. Every file still opens under its own name.` : "",
-          report.failed.length ? `${plural(report.failed.length, "copy was", "copies were")} skipped: ${some}${report.failed.length > 2 ? "…" : ""}` : "",
+          report.done.length ? t("{0} freed. Every file still opens under its own name.", formatBytes(report.freed)) : "",
+          report.failed.length ? t("{0} skipped: {1}{2}", plural(report.failed.length, "copy was", "copies were"), some, report.failed.length > 2 ? "…" : "") : "",
         ]
           .filter(Boolean)
           .join(" "),
@@ -805,7 +815,7 @@ export default function App() {
     setShowBasket(false);
     if (!found.length) {
       setBasket([]);
-      showError("Nothing in the basket is in the scan any more.");
+      showError(t("Nothing in the basket is in the scan any more."));
       return;
     }
     setBasket(found);
@@ -814,7 +824,7 @@ export default function App() {
       ids: ids.filter((id): id is number => id != null),
       bytes: found.reduce((s, i) => s + i.size, 0),
       paths: largest.slice(0, 6).map((i) => i.path),
-      note: "What goes is taken out of the basket.",
+      note: t("What goes is taken out of the basket."),
     });
   }, [basket, showError]);
 
@@ -899,16 +909,16 @@ export default function App() {
           items: [
             { type: "heading", label: plural(ids.length, "item selected", "items selected") },
             {
-              label: "Copy paths",
+              label: t("Copy paths"),
               icon: Copy,
               onSelect: () =>
                 Promise.all(ids.map((i) => api.nodeInfo(i)))
                   .then((infos) => navigator.clipboard.writeText(infos.map((i) => i.path).join("\r\n")))
                   .catch((e) => showError(errorText(e))),
             },
-            { label: "Clear selection", icon: X, shortcut: "Esc", onSelect: () => setSelectedId(null) },
+            { label: t("Clear selection"), icon: X, shortcut: "Esc", onSelect: () => setSelectedId(null) },
             {
-              label: "Add to basket",
+              label: t("Add to basket"),
               icon: ShoppingBasket,
               onSelect: () =>
                 Promise.all(ids.map((i) => api.nodeInfo(i)))
@@ -926,7 +936,7 @@ export default function App() {
             },
             { type: "separator" },
             {
-              label: `Move ${plural(ids.length, "item", "items")} to Recycle Bin`,
+              label: t("Move {0} to Recycle Bin", plural(ids.length, "item", "items")),
               icon: Trash2,
               shortcut: "Del",
               danger: true,
@@ -946,21 +956,21 @@ export default function App() {
             items: [
               ...(isDir
                 ? [
-                    { label: "Zoom in", icon: ZoomIn, shortcut: "Enter", onSelect: () => navigateTo(id) },
-                    { label: "Refresh this folder", icon: RotateCw, onSelect: () => refreshFolder(id) },
+                    { label: t("Zoom in"), icon: ZoomIn, shortcut: "Enter", onSelect: () => navigateTo(id) },
+                    { label: t("Refresh this folder"), icon: RotateCw, onSelect: () => refreshFolder(id) },
                   ]
                 : info.kind === "denied"
-                  ? [{ label: "Try reading it again", icon: RotateCw, onSelect: () => refreshFolder(id) }]
-                  : [{ label: "Open", icon: ExternalLink, onSelect: () => openFile(info.path) }]),
-              { label: "Show in Explorer", icon: FolderSearch, onSelect: () => reveal(info.path) },
+                  ? [{ label: t("Try reading it again"), icon: RotateCw, onSelect: () => refreshFolder(id) }]
+                  : [{ label: t("Open"), icon: ExternalLink, onSelect: () => openFile(info.path) }]),
+              { label: t("Show in Explorer"), icon: FolderSearch, onSelect: () => reveal(info.path) },
               {
-                label: "Copy path",
+                label: t("Copy path"),
                 icon: Copy,
                 shortcut: "Ctrl+Shift+C",
                 onSelect: () => navigator.clipboard.writeText(info.path),
               },
               {
-                label: "Add to basket",
+                label: t("Add to basket"),
                 icon: ShoppingBasket,
                 disabled: id === 0,
                 onSelect: () =>
@@ -975,7 +985,7 @@ export default function App() {
               },
               { type: "separator" },
               {
-                label: "Move to Recycle Bin",
+                label: t("Move to Recycle Bin"),
                 icon: Trash2,
                 shortcut: "Del",
                 danger: true,
@@ -1005,12 +1015,12 @@ export default function App() {
         anchor,
         align: "end",
         items: [
-          { type: "heading", label: "Colour files by" },
-          { label: "File type", icon: p.colorBy === "type" ? Check : undefined, checked: p.colorBy === "type", onSelect: () => updatePrefs({ ...p, colorBy: "type" }) },
-          { label: "Age (last changed)", icon: p.colorBy === "age" ? Check : undefined, checked: p.colorBy === "age", onSelect: () => updatePrefs({ ...p, colorBy: "age" }) },
+          { type: "heading", label: t("Colour files by") },
+          { label: t("File type"), icon: p.colorBy === "type" ? Check : undefined, checked: p.colorBy === "type", onSelect: () => updatePrefs({ ...p, colorBy: "type" }) },
+          { label: t("Age (last changed)"), icon: p.colorBy === "age" ? Check : undefined, checked: p.colorBy === "age", onSelect: () => updatePrefs({ ...p, colorBy: "age" }) },
           { type: "separator" },
           {
-            label: "Cushion shading",
+            label: t("Cushion shading"),
             icon: p.cushions ? Check : undefined,
             checked: p.cushions,
             disabled: p.mapView !== "treemap",
@@ -1151,23 +1161,13 @@ export default function App() {
 
   return (
     <div className="app">
+      <TitleBar location={screen === "home" ? null : scanPath || null} elevated={elevated} />
       <header className={cx("topbar", screen === "results" && "has-results")}>
         <div className="topbar-start">
-          <div className="brand">
-            <img className="brand-glyph" src="/app-icon.svg" alt="" />
-            <span className="brand-name">Disq Studio</span>
-            {elevated && (
-              <span className="lozenge lozenge-information" data-tooltip="Running as administrator: every folder can be read">
-                <ShieldCheck size={12} aria-hidden="true" />
-                Admin
-              </span>
-            )}
-          </div>
           {screen === "results" && (
             <>
-              <span className="topbar-divider" />
-              <IconButton icon={House} label="All drives" onClick={() => setScreen("home")} />
-              <div className="segmented" role="tablist" aria-label="View">
+              <IconButton icon={House} label={t("All drives")} onClick={() => setScreen("home")} />
+              <div className="segmented" role="tablist" aria-label={t("View")}>
                 <button
                   className={cx("segment", view === "map" && "is-selected")}
                   role="tab"
@@ -1175,29 +1175,29 @@ export default function App() {
                   onClick={() => setView("map")}
                 >
                   <LayoutGrid size={14} aria-hidden="true" />
-                  Map
+                  {t("Map")}
                 </button>
                 <button
                   className={cx("segment", view === "duplicates" && "is-selected")}
                   role="tab"
                   aria-selected={view === "duplicates"}
                   disabled={readOnly}
-                  data-tooltip={readOnly ? "Not for a snapshot: scan again to look for duplicates" : undefined}
+                  data-tooltip={readOnly ? t("Not for a snapshot: scan again to look for duplicates") : undefined}
                   onClick={() => setView("duplicates")}
                 >
                   <Copy size={14} aria-hidden="true" />
-                  Duplicates
+                  {t("Duplicates")}
                 </button>
                 <button
                   className={cx("segment", view === "cleanup" && "is-selected")}
                   role="tab"
                   aria-selected={view === "cleanup"}
                   disabled={readOnly}
-                  data-tooltip={readOnly ? "Not for a snapshot: scan again to clean up" : undefined}
+                  data-tooltip={readOnly ? t("Not for a snapshot: scan again to clean up") : undefined}
                   onClick={() => setView("cleanup")}
                 >
                   <Sparkles size={14} aria-hidden="true" />
-                  Cleanup
+                  {t("Cleanup")}
                 </button>
                 {comparing && (
                   <button
@@ -1207,7 +1207,7 @@ export default function App() {
                     onClick={() => setView("changes")}
                   >
                     <ArrowLeftRight size={14} aria-hidden="true" />
-                    Changes
+                    {t("Changes")}
                   </button>
                 )}
               </div>
@@ -1223,79 +1223,79 @@ export default function App() {
               {filterOn && filterSummary ? (
                 <span
                   className="lozenge lozenge-discovery"
-                  data-tooltip="A filter is on: the map, lists and totals only count matching files"
+                  data-tooltip={t("A filter is on: the map, lists and totals only count matching files")}
                 >
-                  Filtered · {formatBytes(filterSummary.bytes)} in {plural(filterSummary.files, "file", "files")}
+                  {t("Filtered · {0} in {1}", formatBytes(filterSummary.bytes), plural(filterSummary.files, "file", "files"))}
                 </span>
               ) : (
                 <>
                   <span className="hud-stat">{formatBytes(root.size)}</span>
                   <span className="hud-stat">{plural(root.files, "file", "files")}</span>
-                  {scanStats && !snapshotView && <span className="hud-stat">in {formatElapsed(scanStats.elapsedMs)}</span>}
+                  {scanStats && !snapshotView && <span className="hud-stat">{t("in {0}", formatElapsed(scanStats.elapsedMs))}</span>}
                 </>
               )}
               {snapshotView && (
                 <span
                   className="lozenge lozenge-discovery"
-                  data-tooltip="An earlier scan, opened from History. Nothing can be deleted from it; Rescan to see the drive as it is now."
+                  data-tooltip={t("An earlier scan, opened from History. Nothing can be deleted from it; Rescan to see the drive as it is now.")}
                 >
-                  Snapshot · {formatDateTime(snapshotView.scannedAt)}
+                  {t("Snapshot · {0}", formatDateTime(snapshotView.scannedAt))}
                 </span>
               )}
               {!!root.online && (
                 <span
                   className="lozenge lozenge-information"
-                  data-tooltip="Online-only cloud files (OneDrive and similar). Their data isn't on this drive; switch to On disk to leave them out."
+                  data-tooltip={t("Online-only cloud files (OneDrive and similar). Their data isn't on this drive; switch to On disk to leave them out.")}
                 >
-                  {formatBytes(root.online)} online only
+                  {t("{0} online only", formatBytes(root.online))}
                 </span>
               )}
               {!!scanStats?.excluded && (
-                <span className="lozenge" data-tooltip="Folders left out by Settings › Folders to skip">
-                  {scanStats.excluded.toLocaleString()} excluded
+                <span className="lozenge" data-tooltip={t("Folders left out by Settings › Folders to skip")}>
+                  {t("{0} excluded", scanStats.excluded.toLocaleString(locale()))}
                 </span>
               )}
               {scanStats?.fromMft && (
                 <span
                   className="lozenge lozenge-success"
-                  data-tooltip="Read from the drive's file table in one go. Includes NTFS's own files ($MFT and others) and System Volume Information."
+                  data-tooltip={t("Read from the drive's file table in one go. Includes NTFS's own files ($MFT and others) and System Volume Information.")}
                 >
-                  File table
+                  {t("File table")}
                 </span>
               )}
               {!!scanStats?.errors &&
                 (elevated ? (
-                  <span className="lozenge lozenge-warning" data-tooltip="Folders Windows didn't allow to be read, even as administrator. Their sizes aren't counted.">
-                    {scanStats.errors.toLocaleString()} skipped
+                  <span className="lozenge lozenge-warning" data-tooltip={t("Folders Windows didn't allow to be read, even as administrator. Their sizes aren't counted.")}>
+                    {t("{0} skipped", scanStats.errors.toLocaleString(locale()))}
                   </span>
                 ) : (
                   <button
                     className="lozenge lozenge-warning lozenge-button"
-                    data-tooltip="Folders your account isn't allowed to read; their sizes aren't counted. Click to restart as administrator and read them too."
+                    data-tooltip={t("Folders your account isn't allowed to read; their sizes aren't counted. Click to restart as administrator and read them too.")}
                     onClick={(e) => {
                       const r = e.currentTarget.getBoundingClientRect();
                       setMenu({
                         x: r.left,
                         y: r.bottom + 4,
-                        items: [{ label: "Restart as administrator", icon: ShieldCheck, onSelect: relaunchAsAdmin }],
+                        items: [{ label: t("Restart as administrator"), icon: ShieldCheck, onSelect: relaunchAsAdmin }],
                       });
                     }}
                   >
-                    {scanStats.errors.toLocaleString()} skipped
+                    {t("{0} skipped", scanStats.errors.toLocaleString(locale()))}
                   </button>
                 ))}
             </>
           ) : screen === "scanning" ? (
-            <span>Scanning {scanPath}…</span>
+            <span>{t("Scanning {0}…", scanPath)}</span>
           ) : (
-            <span>No scan yet</span>
+            <span>{t("No scan yet")}</span>
           )}
         </div>
 
         <div className="topbar-end">
           {screen === "results" && (
             <>
-              <div className="segmented" role="radiogroup" aria-label="Measure sizes by">
+              <div className="segmented" role="radiogroup" aria-label={t("Measure sizes by")}>
                 {(["logical", "allocated"] as const).map((mode) => (
                   <button
                     key={mode}
@@ -1304,8 +1304,8 @@ export default function App() {
                     aria-checked={sizeMode === mode}
                     data-tooltip={
                       mode === "logical"
-                        ? "How long each file is, like Explorer's Size column"
-                        : "Space actually used on the drive: whole clusters, after compression, without online-only cloud files"
+                        ? t("How long each file is, like Explorer's Size column")
+                        : t("Space actually used on the drive: whole clusters, after compression, without online-only cloud files")
                     }
                     onClick={() => setSizeMode(mode)}
                   >
@@ -1313,20 +1313,20 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <Button iconBefore={RefreshCw} shortcut="Ctrl+R" tooltip="Scan this location again" onClick={() => startScan(scanPath)}>
-                Rescan
+              <Button iconBefore={RefreshCw} shortcut="Ctrl+R" tooltip={t("Scan this location again")} onClick={() => startScan(scanPath)}>
+                {t("Rescan")}
               </Button>
               <IconButton
                 icon={HistoryIcon}
-                label="History: earlier scans, and what changed since"
+                label={t("History: earlier scans, and what changed since")}
                 selected={showHistory}
                 onClick={() => setShowHistory(true)}
               />
-              <IconButton icon={Download} label="Export a report of the folder in view" selected={showExport} onClick={() => setShowExport(true)} />
+              <IconButton icon={Download} label={t("Export a report of the folder in view")} selected={showExport} onClick={() => setShowExport(true)} />
               <span className="basket-button">
                 <IconButton
                   icon={ShoppingBasket}
-                  label={basket.length ? `Cleanup basket: ${plural(basket.length, "item", "items")}` : "Cleanup basket"}
+                  label={basket.length ? t("Cleanup basket: {0}", plural(basket.length, "item", "items")) : t("Cleanup basket")}
                   selected={showBasket}
                   onClick={() => setShowBasket(true)}
                 />
@@ -1334,7 +1334,7 @@ export default function App() {
               </span>
               <IconButton
                 icon={PanelRight}
-                label={showInspector ? "Hide details" : "Show details"}
+                label={showInspector ? t("Hide details") : t("Show details")}
                 selected={showInspector}
                 onClick={() => setShowInspector((s) => !s)}
               />
@@ -1347,7 +1347,7 @@ export default function App() {
           />
           <IconButton
             icon={Settings}
-            label="Settings"
+            label={t("Settings")}
             shortcut="Ctrl+,"
             selected={showSettings}
             onClick={() => setShowSettings(true)}
@@ -1467,18 +1467,18 @@ export default function App() {
               className="panel-resizer"
               role="separator"
               aria-orientation="vertical"
-              aria-label="Resize the folder list"
-              data-tooltip="Drag to resize; double-click to reset"
+              aria-label={t("Resize the folder list")}
+              data-tooltip={t("Drag to resize; double-click to reset")}
               onPointerDown={startPanelDrag}
               onDoubleClick={() => updateColumns({ ...columns, panel: 480 })}
             />
           </div>
 
           <div className="center">
-            <section className="panel map-panel" aria-label="Treemap">
-              <nav className="navbar" aria-label="Location">
-                <IconButton icon={ArrowLeft} label="Back" shortcut="Alt+←" disabled={!history.length} onClick={goBack} />
-                <IconButton icon={ArrowUp} label="Up one level" shortcut="Backspace" disabled={crumbs.length < 2} onClick={goUp} />
+            <section className="panel map-panel" aria-label={t("Treemap")}>
+              <nav className="navbar" aria-label={t("Location")}>
+                <IconButton icon={ArrowLeft} label={t("Back")} shortcut="Alt+←" disabled={!history.length} onClick={goBack} />
+                <IconButton icon={ArrowUp} label={t("Up one level")} shortcut="Backspace" disabled={crumbs.length < 2} onClick={goUp} />
                 <div className="crumbs">
                   {crumbs.length > visibleCrumbs.length && (
                     <>
@@ -1504,13 +1504,13 @@ export default function App() {
                   ))}
                 </div>
                 {folder && <span className="hud-stat" style={{ padding: "0 var(--space-100)" }}>{formatBytes(folder.size)}</span>}
-                <div className="segmented segmented-icons" role="radiogroup" aria-label="Chart">
+                <div className="segmented segmented-icons" role="radiogroup" aria-label={t("Chart")}>
                   <button
                     className={cx("segment", prefs.mapView === "treemap" && "is-selected")}
                     role="radio"
                     aria-checked={prefs.mapView === "treemap"}
-                    aria-label="Treemap"
-                    data-tooltip="Treemap: blocks sized by space used"
+                    aria-label={t("Treemap")}
+                    data-tooltip={t("Treemap: blocks sized by space used")}
                     onClick={() => updatePrefs({ ...prefs, mapView: "treemap" })}
                   >
                     <LayoutGrid size={14} aria-hidden="true" />
@@ -1519,17 +1519,17 @@ export default function App() {
                     className={cx("segment", prefs.mapView === "sunburst" && "is-selected")}
                     role="radio"
                     aria-checked={prefs.mapView === "sunburst"}
-                    aria-label="Sunburst"
-                    data-tooltip="Sunburst: rings out from this folder, one per level"
+                    aria-label={t("Sunburst")}
+                    data-tooltip={t("Sunburst: rings out from this folder, one per level")}
                     onClick={() => updatePrefs({ ...prefs, mapView: "sunburst" })}
                   >
                     <ChartPie size={14} aria-hidden="true" />
                   </button>
                 </div>
-                <IconButton icon={SlidersHorizontal} label="Map options" onClick={(e) => openMapOptions(e.currentTarget)} />
+                <IconButton icon={SlidersHorizontal} label={t("Map options")} onClick={(e) => openMapOptions(e.currentTarget)} />
                 <IconButton
                   icon={RotateCw}
-                  label={refreshingId != null ? "Refreshing…" : "Refresh this folder"}
+                  label={refreshingId != null ? t("Refreshing…") : t("Refresh this folder")}
                   disabled={refreshingId != null}
                   iconClassName={refreshingId != null ? "spin" : undefined}
                   onClick={() => refreshFolder(folderId)}
@@ -1571,15 +1571,15 @@ export default function App() {
               )}
               {highlight && (
                 <div className="map-banner" role="status">
-                  <span>Showing {highlight.label}</span>
+                  <span>{t("Showing {0}", highlight.label)}</span>
                   <Button spacing="compact" appearance="subtle" iconBefore={X} onClick={() => setHighlight(null)}>
-                    Stop
+                    {t("Stop")}
                   </Button>
                 </div>
               )}
             </section>
             {prefs.colorBy === "age" ? (
-              <div className="legend" aria-label="Colours by when files last changed">
+              <div className="legend" aria-label={t("Colours by when files last changed")}>
                 {AGE_BUCKETS.map((b) => (
                   <span key={b.label} className="legend-item">
                     <span className="swatch" style={{ background: `var(${b.var})` }} />
@@ -1589,12 +1589,12 @@ export default function App() {
                 {!!freeBytes && (
                   <span className="legend-item">
                     <span className="swatch swatch-free" />
-                    Free space
+                    {t("Free space")}
                   </span>
                 )}
               </div>
             ) : (
-              <div className="legend" role="group" aria-label="File types: click one to show only that type">
+              <div className="legend" role="group" aria-label={t("File types: click one to show only that type")}>
                 {CATEGORIES.map((c) => {
                   const on = filter.categories.includes(c);
                   return (
@@ -1602,7 +1602,7 @@ export default function App() {
                       key={c}
                       className={cx("legend-item legend-button", on && "is-selected", filter.categories.length > 0 && !on && "is-muted")}
                       aria-pressed={on}
-                      data-tooltip={on ? `Stop showing only ${CATEGORY_LABEL[c].toLowerCase()}` : `Show only ${CATEGORY_LABEL[c].toLowerCase()}`}
+                      data-tooltip={on ? t("Stop showing only {0}", CATEGORY_LABEL[c].toLowerCase()) : t("Show only {0}", CATEGORY_LABEL[c].toLowerCase())}
                       onClick={() => toggleCategory(c)}
                     >
                       <span className="swatch" style={{ background: `var(${CATEGORY_VAR[c]})` }} />
@@ -1613,13 +1613,13 @@ export default function App() {
                 {sizeMode === "logical" && !!root.online && (
                   <span className="legend-item">
                     <span className="swatch swatch-online" />
-                    Online only
+                    {t("Online only")}
                   </span>
                 )}
                 {!!freeBytes && (
                   <span className="legend-item">
                     <span className="swatch swatch-free" />
-                    Free space
+                    {t("Free space")}
                   </span>
                 )}
               </div>
@@ -1680,9 +1680,9 @@ export default function App() {
             setShowExport(false);
             setToast({
               kind: "success",
-              title: "Report exported",
-              description: `${plural(rows, "row", "rows")} in ${path}`,
-              action: { label: "Open", onClick: () => openFile(path) },
+              title: t("Report exported"),
+              description: t("{0} in {1}", plural(rows, "row", "rows"), path),
+              action: { label: t("Open"), onClick: () => openFile(path) },
             });
           }}
           onClose={() => setShowExport(false)}
@@ -1750,7 +1750,7 @@ export default function App() {
               {toast.action.label}
             </Button>
           )}
-          <IconButton icon={X} label="Dismiss" spacing="compact" onClick={() => setToast(null)} />
+          <IconButton icon={X} label={t("Dismiss")} spacing="compact" onClick={() => setToast(null)} />
         </div>
       )}
       <TooltipLayer />

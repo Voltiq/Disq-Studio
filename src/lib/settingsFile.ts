@@ -7,6 +7,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { api } from "./api";
 import type { BackgroundConfig } from "./types";
+import { t } from "./i18n";
 
 const PREFIX = "disk-studio.";
 const FORMAT = "disq-studio-settings";
@@ -42,10 +43,10 @@ export async function importSettings(path: string): Promise<{ keys: number; back
   try {
     file = JSON.parse(text);
   } catch {
-    throw new Error("That file isn't Disq Studio settings.");
+    throw new Error(t("That file isn't Disq Studio settings."));
   }
   if (file?.format !== FORMAT || typeof file.stored !== "object" || file.stored === null) {
-    throw new Error("That file isn't Disq Studio settings.");
+    throw new Error(t("That file isn't Disq Studio settings."));
   }
   let keys = 0;
   for (const [key, value] of Object.entries(file.stored)) {

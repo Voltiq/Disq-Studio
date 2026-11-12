@@ -16,6 +16,7 @@ import {
 import { firstChild, HEADER, hitTest, layout, neighbour, type Cell, type Direction } from "../lib/treemap";
 import type { Kind, MapNode } from "../lib/types";
 import { Spinner } from "./ui/Feedback";
+import { t } from "../lib/i18n";
 
 interface TreemapProps {
   rootId: number;
@@ -199,7 +200,7 @@ function drawFree(ctx: CanvasRenderingContext2D, c: Cell, p: Palette) {
   if (w > 80 && h > 34) {
     ctx.font = `600 12px ${p.font}`;
     ctx.fillStyle = p.textSubtle;
-    ctx.fillText(fitText(ctx, "Free space", w - 16), x + 8, y + 14);
+    ctx.fillText(fitText(ctx, t("Free space"), w - 16), x + 8, y + 14);
     ctx.font = `500 10.5px ${p.mono}`;
     ctx.fillText(formatBytes(c.size), x + 8, y + 30);
   }
@@ -240,7 +241,7 @@ function drawOnline(ctx: CanvasRenderingContext2D, c: Cell, color: string, p: Pa
     if (h > 42) {
       ctx.font = `500 10.5px ${p.mono}`;
       ctx.fillStyle = p.textSubtle;
-      ctx.fillText(`${formatBytes(c.size)} · online only`, x + 6, y + 27);
+      ctx.fillText(t("{0} · online only", formatBytes(c.size)), x + 6, y + 27);
     }
   }
 }
@@ -457,9 +458,7 @@ export function Treemap({
   }
 
   const announce = selectedCell
-    ? `${selectedCell.name}, ${formatBytes(selectedCell.size)}, ${formatShare(selectedCell.size, total)} of view${
-        selectedCell.kind === "dir" ? ", folder" : ""
-      }`
+    ? t("{0}, {1}, {2} of view{3}", selectedCell.name, formatBytes(selectedCell.size), formatShare(selectedCell.size, total), selectedCell.kind === "dir" ? t(", folder") : "")
     : "";
 
   return (
@@ -467,7 +466,7 @@ export function Treemap({
       <canvas
         ref={baseRef}
         tabIndex={0}
-        aria-label="Treemap of the current folder. Arrow keys move between blocks, ] goes into a folder, [ goes back out, Enter zooms in."
+        aria-label={t("Treemap of the current folder. Arrow keys move between blocks, ] goes into a folder, [ goes back out, Enter zooms in.")}
         aria-describedby="map-selection"
         role="application"
         onKeyDown={onKeyDown}
@@ -513,7 +512,7 @@ export function Treemap({
       </p>
       {loading && !data && (
         <div className="map-loading">
-          <Spinner size={24} label="Drawing the map" />
+          <Spinner size={24} label={t("Drawing the map")} />
         </div>
       )}
       {hover && <MapTip cell={hover.cell} x={hover.x} y={hover.y} total={total} colorBy={colorBy} />}
@@ -558,14 +557,14 @@ export function MapTip({
 
   const kind =
     cell.kind === "rest"
-      ? "Many small items"
+      ? t("Many small items")
       : cell.kind === "dir"
-        ? "Folder"
+        ? t("Folder")
         : cell.kind === "denied"
-          ? "Folder · access denied"
+          ? t("Folder · access denied")
           : cell.online
-            ? "Online only, not on this drive"
-            : "File";
+            ? t("Online only, not on this drive")
+            : t("File");
   const color =
     cell.kind !== "file"
       ? "var(--surface-4)"
@@ -580,10 +579,10 @@ export function MapTip({
       </span>
       <span className="map-tip-meta">
         {cell.kind === "free"
-          ? `${formatBytes(cell.size)} free on this drive`
-          : `${formatBytes(cell.size)} · ${formatShare(cell.size, total)} of view · ${kind}`}
+          ? t("{0} free on this drive", formatBytes(cell.size))
+          : t("{0} · {1} of view · {2}", formatBytes(cell.size), formatShare(cell.size, total), kind)}
       </span>
-      {cell.kind === "file" && <span className="map-tip-meta">Changed {formatDate(cell.modified)}</span>}
+      {cell.kind === "file" && <span className="map-tip-meta">{t("Changed {0}", formatDate(cell.modified))}</span>}
     </div>
   );
 }

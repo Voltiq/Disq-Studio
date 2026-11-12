@@ -3,6 +3,7 @@ mod background;
 mod compare;
 mod dupes;
 mod filter;
+mod i18n;
 mod junk;
 mod listing;
 mod mft;
@@ -962,6 +963,12 @@ async fn export_report(state: State<'_, AppState>, id: u32, path: String, option
     report::write(tree, id, &options, std::path::Path::new(&path)).map_err(|e| e.to_string())
 }
 
+/// The interface's language, for the text Rust writes itself (notifications, the HTML report).
+#[tauri::command]
+fn set_language(language: String) {
+    i18n::set(&language);
+}
+
 /// Writes exported settings; only to a `.json` file.
 #[tauri::command]
 fn write_settings_file(path: String, contents: String) -> Res<()> {
@@ -1014,7 +1021,10 @@ async fn check_now() -> Res<Vec<background::Finding>> {
     tauri::async_runtime::spawn_blocking(move || {
         let found = background::run_check(&config, true);
         if found.is_empty() {
-            background::notify("Disq Studio checked your drives", "Nothing to report: every drive has room to spare.");
+            background::notify(
+                &i18n::tr("Disq Studio checked your drives", &[]),
+                &i18n::tr("Nothing to report: every drive has room to spare.", &[]),
+            );
         }
         found
     })
@@ -1187,6 +1197,7 @@ pub fn run() {
             set_background,
             check_now,
             write_settings_file,
+            set_language,
             read_settings_file,
             set_filter,
             filter_results,

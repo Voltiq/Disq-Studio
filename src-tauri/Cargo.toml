@@ -1,6 +1,6 @@
 [package]
 name = "disk-studio"
-version = "1.0.0"
+version = "1.1.0"
 description = "Disq Studio: a fast disk space visualizer for Windows"
 license = "MIT"
 repository = "https://github.com/Voltiq/Disq-Studio"

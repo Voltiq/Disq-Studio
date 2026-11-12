@@ -6,6 +6,7 @@ import { formatBytes, formatChange, formatDateTime, plural } from "../lib/format
 import type { SavedSnapshot } from "../lib/types";
 import { Button, IconButton } from "./ui/Button";
 import { EmptyState, Spinner } from "./ui/Feedback";
+import { t } from "../lib/i18n";
 
 interface HistoryDialogProps {
   /** The location in view, or null on the home screen. */
@@ -64,7 +65,7 @@ export function HistoryDialog({
   async function saveNow(toFile: boolean) {
     let path: string | null = null;
     if (toFile) {
-      const picked = await pickSaveFile({ title: "Save this scan as a snapshot", filters: SNAPSHOT_FILTER, defaultPath: "Disq Studio snapshot.dss" });
+      const picked = await pickSaveFile({ title: t("Save this scan as a snapshot"), filters: SNAPSHOT_FILTER, defaultPath: t("Disq Studio snapshot.dss") });
       if (!picked) return;
       path = picked;
     }
@@ -80,7 +81,7 @@ export function HistoryDialog({
   }
 
   async function openFile(compare: boolean) {
-    const picked = await pickFile({ title: compare ? "Compare with a snapshot" : "Open a snapshot", filters: SNAPSHOT_FILTER, multiple: false });
+    const picked = await pickFile({ title: compare ? t("Compare with a snapshot") : t("Open a snapshot"), filters: SNAPSHOT_FILTER, multiple: false });
     if (typeof picked !== "string") return;
     if (compare) onCompare(picked);
     else onOpen(picked);
@@ -102,26 +103,25 @@ export function HistoryDialog({
       <div className="modal modal-large history" role="dialog" aria-modal="true" aria-labelledby="history-title">
         <div className="modal-header">
           <h2 className="modal-title" id="history-title">
-            History{scanPath && !showAll ? ` of ${scanPath}` : ""}
+            {t("History")}{scanPath && !showAll ? t(" of {0}", scanPath) : ""}
           </h2>
-          <IconButton ref={closeRef} icon={X} label="Close" onClick={onClose} />
+          <IconButton ref={closeRef} icon={X} label={t("Close")} onClick={onClose} />
         </div>
         <div className="modal-body">
           <p className="dialog-text">
-            Each finished scan is kept as a snapshot (the newest 8 of each location), so you can see what changed since.
-            Compare one with the scan in view, or open it to look around as it was.
+            {t("Each finished scan is kept as a snapshot (the newest 8 of each location), so you can see what changed since. Compare one with the scan in view, or open it to look around as it was.")}
           </p>
           {scanPath && (
             <label className="history-all">
               <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
-              Show snapshots of every location
+              {t("Show snapshots of every location")}
             </label>
           )}
           {!list ? (
-            <Spinner size={18} label="Reading the history" />
+            <Spinner size={18} label={t("Reading the history")} />
           ) : list.length === 0 ? (
-            <EmptyState icon={History} title="No snapshots yet" compact>
-              {scanPath ? "Save one now, or it'll be saved after the next scan." : "Scan a drive or folder to start the history."}
+            <EmptyState icon={History} title={t("No snapshots yet")} compact>
+              {scanPath ? t("Save one now, or it'll be saved after the next scan.") : t("Scan a drive or folder to start the history.")}
             </EmptyState>
           ) : (
             <ul className="history-list">
@@ -133,28 +133,28 @@ export function HistoryDialog({
                       <span className="history-date">{formatDateTime(s.scannedAt)}</span>
                       <span className="hud-stat">
                         {showAll && `${s.root} · `}
-                        {formatBytes(s.allocated)} on disk · {plural(s.files, "file", "files")}
-                        {sameRoot && allocatedNow != null && ` · ${formatChange(allocatedNow - s.allocated)} since`}
+                        {t("{0} on disk · {1}", formatBytes(s.allocated), plural(s.files, "file", "files"))}
+                        {sameRoot && allocatedNow != null && t(" · {0} since", formatChange(allocatedNow - s.allocated))}
                       </span>
                     </div>
                     <span className="hud-stat mono">{formatBytes(s.bytes)}</span>
                     <div className="history-actions">
                       {sameRoot && (
                         <Button spacing="compact" iconBefore={ArrowLeftRight} onClick={() => onCompare(s.path)}>
-                          Compare
+                          {t("Compare")}
                         </Button>
                       )}
                       <Button spacing="compact" appearance="subtle" iconBefore={FolderOpen} onClick={() => onOpen(s.path)}>
-                        Open
+                        {t("Open")}
                       </Button>
-                      <IconButton icon={Trash2} label="Delete this snapshot" spacing="compact" onClick={() => remove(s)} />
+                      <IconButton icon={Trash2} label={t("Delete this snapshot")} spacing="compact" onClick={() => remove(s)} />
                     </div>
                   </li>
                 );
               })}
             </ul>
           )}
-          {!!list?.length && <p className="hud-stat">{formatBytes(total)} of snapshots.</p>}
+          {!!list?.length && <p className="hud-stat">{t("{0} of snapshots.", formatBytes(total))}</p>}
         </div>
         <div className="modal-footer">
           <Button
@@ -163,24 +163,24 @@ export function HistoryDialog({
             iconBefore={FolderSearch}
             onClick={() => api.snapshotsFolder().then(onReveal).catch((e) => onError(errorText(e)))}
           >
-            Show folder
+            {t("Show folder")}
           </Button>
           <Button appearance="subtle" iconBefore={FolderOpen} onClick={() => openFile(false)}>
-            Open a file…
+            {t("Open a file…")}
           </Button>
           {scanPath && (
             <Button appearance="subtle" iconBefore={ArrowLeftRight} onClick={() => openFile(true)}>
-              Compare with a file…
+              {t("Compare with a file…")}
             </Button>
           )}
           {scanPath && (
             <Button appearance="subtle" iconBefore={Save} disabled={busy} onClick={() => saveNow(true)}>
-              Save as…
+              {t("Save as…")}
             </Button>
           )}
           {scanPath && !viewingSnapshot && (
             <Button appearance="primary" iconBefore={Save} loading={busy} onClick={() => saveNow(false)}>
-              Save snapshot now
+              {t("Save snapshot now")}
             </Button>
           )}
         </div>

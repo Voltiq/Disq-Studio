@@ -10,6 +10,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+use crate::i18n::tr;
 use crate::snapshot;
 use crate::tree::{SizeMode, Tree};
 
@@ -167,12 +168,10 @@ pub fn check_space(c: &Config) -> Vec<Finding> {
         .filter_map(|v| {
             let pct = v.free as f64 * 100.0 / v.total as f64;
             (pct < c.min_free_percent as f64).then(|| Finding {
-                title: format!("{} is getting full", v.path.trim_end_matches('\\')),
-                body: format!(
-                    "{} free of {} ({:.0}%). Open Disq Studio to see what's taking the space.",
-                    crate::report::human(v.free),
-                    crate::report::human(v.total),
-                    pct
+                title: tr("{0} is getting full", &[v.path.trim_end_matches('\\')]),
+                body: tr(
+                    "{0} free of {1} ({2}%). Open Disq Studio to see what's taking the space.",
+                    &[&crate::report::human(v.free), &crate::report::human(v.total), &format!("{pct:.0}")],
                 ),
             })
         })
@@ -184,7 +183,7 @@ pub fn snapshot_root(root: &str, c: &Config) -> Result<Option<Finding>, String> 
     let path = PathBuf::from(root);
     let previous = snapshot::list(&snapshots_dir(), Some(root)).into_iter().next();
     let progress = crate::scan::Progress::default();
-    let raw = crate::scan::scan(&path, &progress, &crate::scan::Excludes::default()).ok_or("The scan was cancelled.")?;
+    let raw = crate::scan::scan(&path, &progress, &crate::scan::Excludes::default()).ok_or_else(|| tr("The scan was cancelled.", &[]))?;
     let tree = Tree::from_raw(path, raw, SizeMode::Allocated, crate::dedupes_links_at(root));
     let meta = snapshot::Meta::of(&tree, now_ms(), false);
     let file = snapshots_dir().join(snapshot::file_name(root, meta.scanned_at));
@@ -193,12 +192,11 @@ pub fn snapshot_root(root: &str, c: &Config) -> Result<Option<Finding>, String> 
     let Some(prev) = previous else { return Ok(None) };
     let grew = meta.allocated as i128 - prev.meta.allocated as i128;
     if grew >= (c.grow_alert_gb * 1024 * 1024 * 1024) as i128 {
-        let (y, m, d, ..) = crate::report::civil(prev.meta.scanned_at);
         return Ok(Some(Finding {
-            title: format!("{} grew {}", root.trim_end_matches('\\'), crate::report::human(grew as u64)),
-            body: format!(
-                "Since the scan of {d}.{m}.{y}: now {} on disk. Open Disq Studio › History to see what grew.",
-                crate::report::human(meta.allocated)
+            title: tr("{0} grew {1}", &[root.trim_end_matches('\\'), &crate::report::human(grew as u64)]),
+            body: tr(
+                "Since the scan of {0}: now {1} on disk. Open Disq Studio › History to see what grew.",
+                &[&crate::i18n::date(prev.meta.scanned_at), &crate::report::human(meta.allocated)],
             ),
         }));
     }
@@ -220,7 +218,7 @@ pub fn run_check(c: &Config, show: bool) -> Vec<Finding> {
                 findings.push(f);
             }
             Ok(None) => {}
-            Err(e) => findings.push(Finding { title: format!("Couldn't scan {root}"), body: e }),
+            Err(e) => findings.push(Finding { title: tr("Couldn't scan {0}", &[root]), body: e }),
         }
     }
     findings
@@ -228,6 +226,7 @@ pub fn run_check(c: &Config, show: bool) -> Vec<Finding> {
 
 /// The `--background` run: no window, no single-instance hand-off, just the check.
 pub fn run_headless() {
+    crate::i18n::load();
     let c = load_config();
     run_check(&c, true);
 }

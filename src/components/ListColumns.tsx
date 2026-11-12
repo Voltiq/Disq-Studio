@@ -13,6 +13,7 @@ import {
 import { formatBytes, formatShortDate, formatShare } from "../lib/format";
 import { cx } from "../lib/utils";
 import type { MenuRequest } from "./ui/Menu";
+import { t, locale } from "../lib/i18n";
 
 interface ListHeadProps {
   /** The layout as chosen. */
@@ -44,12 +45,12 @@ export function ListHead({ layout, fitted, sizeLabel, sortable, onLayout, onMenu
       x: e.clientX,
       y: e.clientY,
       items: [
-        { type: "heading", label: "Columns" },
+        { type: "heading", label: t("Columns") },
         ...OPTIONAL_COLUMNS.map((k) => {
           const shown = !layout.hidden.includes(k);
           const squeezed = shown && fitted.hidden.includes(k);
           return {
-            label: `${k === "size" ? sizeLabel : COLUMN_LABEL[k]}${squeezed ? " (needs a wider list)" : ""}`,
+            label: `${k === "size" ? sizeLabel : COLUMN_LABEL[k]}${squeezed ? t(" (needs a wider list)") : ""}`,
             icon: shown ? Check : undefined,
             checked: shown,
             onSelect: () =>
@@ -69,7 +70,7 @@ export function ListHead({ layout, fitted, sizeLabel, sortable, onLayout, onMenu
         aria-sort={active ? (layout.sort.dir === "asc" ? "ascending" : "descending") : undefined}
         disabled={!sortable}
         onClick={() => sortBy(key)}
-        data-tooltip={sortable ? `Sort by ${label.toLowerCase()}` : undefined}
+        data-tooltip={sortable ? t("Sort by {0}", label.toLowerCase()) : undefined}
       >
         <span>{label}</span>
         {active && <Arrow size={11} aria-hidden="true" />}
@@ -87,7 +88,7 @@ export function ListHead({ layout, fitted, sizeLabel, sortable, onLayout, onMenu
             className="col-resize"
             role="separator"
             aria-orientation="vertical"
-            aria-label={`Resize ${COLUMN_LABEL[key]}`}
+            aria-label={t("Resize {0}", COLUMN_LABEL[key])}
             onPointerDown={(e) => {
               e.preventDefault();
               e.currentTarget.setPointerCapture(e.pointerId);
@@ -136,7 +137,7 @@ export function RowCells({ layout, size, whole, files, modified }: CellsProps) {
           </span>
         ) : key === "files" ? (
           <span key={key} className="row-share">
-            {files == null ? "" : files.toLocaleString()}
+            {files == null ? "" : files.toLocaleString(locale())}
           </span>
         ) : (
           <span key={key} className="row-share">
