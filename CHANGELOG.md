@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-11-12
+
+### Added
+- **Spanish and French**: Disq Studio now speaks English, German, Spanish and French. It follows Windows, or
+  pick one in Settings › Appearance › Language. Both use the words Windows uses (Papelera de reciclaje,
+  Corbeille), and French writes sizes in octets (Ko, Mo, Go), as Windows does. The daily check's
+  notifications and the HTML report are translated too.
+
 ## 1.1.0 — 2026-11-12
 
 ### Added

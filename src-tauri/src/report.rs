@@ -195,18 +195,18 @@ fn now_ms() -> i64 {
 
 /// Like the app: 1 KB = 1,024 bytes.
 pub fn human(bytes: u64) -> String {
-    const UNITS: [&str; 5] = ["KB", "MB", "GB", "TB", "PB"];
+    let units = crate::i18n::units();
     if bytes < 1024 {
-        return format!("{bytes} bytes");
+        return tr("{0} bytes", &[&bytes.to_string()]);
     }
     let mut v = bytes as f64 / 1024.0;
     let mut i = 0;
-    while v >= 1024.0 && i < UNITS.len() - 1 {
+    while v >= 1024.0 && i < units.len() - 1 {
         v /= 1024.0;
         i += 1;
     }
     let digits = if v < 10.0 { 2 } else if v < 100.0 { 1 } else { 0 };
-    format!("{} {}", crate::i18n::decimal(v, digits), UNITS[i])
+    format!("{} {}", crate::i18n::decimal(v, digits), units[i])
 }
 
 fn esc(s: &str) -> String {
@@ -261,7 +261,7 @@ tr + tr td {{ border-top:1px solid var(--line); }}
 </div>
 </section>
 "#,
-        lang = if crate::i18n::german() { "de" } else { "en" },
+        lang = crate::i18n::code(),
         page_title = esc(&tr("Disq Studio report: {0}", &[&top.path])),
         title = esc(&top.path),
         report = l("Disq Studio report"),

@@ -1,24 +1,35 @@
 import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { de } from "./de";
+import { es } from "./es";
+import { fr } from "./fr";
 import { setLanguage, t, te } from "./i18n";
 
-/** Strings that stay the same in German: names, and sizes such as "64 KB". */
-const SAME = /^(Disq|Studio|Disq Studio|English|Deutsch)$/;
+/** Strings that stay the same in every language: names, and sizes such as "64 KB". */
+const SAME = /^(Disq|Studio|Disq Studio|English|Deutsch|Español|Français)$/;
 const technical = (k: string) => SAME.test(k) || !/[A-Za-z]{3}/.test(k.replace(/\{\d+\}/g, ""));
+const keys: string[] = JSON.parse(execFileSync("node", ["scripts/i18n-wrap.mjs", "--keys"], { encoding: "utf8" }));
+const holes = (s: string) => [...new Set([...s.matchAll(/\{(\d+)\}/g)].map((m) => m[1]))].sort().join();
 
-describe("German", () => {
+describe.each([
+  ["German", de],
+  ["Spanish", es],
+  ["French", fr],
+])("%s", (_, table) => {
   it("has every interface string", () => {
-    const keys: string[] = JSON.parse(execFileSync("node", ["scripts/i18n-wrap.mjs", "--keys"], { encoding: "utf8" }));
     expect(keys.length).toBeGreaterThan(400);
-    const missing = keys.filter((k) => !(k in de) && !technical(k));
+    const missing = keys.filter((k) => !(k in table) && !technical(k));
     expect(missing).toEqual([]);
   });
 
   it("keeps the placeholders of every string", () => {
-    const holes = (s: string) => [...new Set([...s.matchAll(/\{(\d+)\}/g)].map((m) => m[1]))].sort().join();
-    const wrong = Object.entries(de).filter(([en, own]) => holes(en) !== holes(own));
+    const wrong = Object.entries(table).filter(([en, own]) => holes(en) !== holes(own));
     expect(wrong.map(([en]) => en)).toEqual([]);
+  });
+
+  it("has the strings that only come from the Rust side, like German", () => {
+    const missing = Object.keys(de).filter((k) => !(k in table) && !technical(k));
+    expect(missing).toEqual([]);
   });
 });
 
@@ -46,6 +57,10 @@ describe("translation", () => {
       "Keine Momentaufnahme von Disq Studio oder eine beschädigte: bad header",
     );
     expect(te("Something the table does not know")).toBe("Something the table does not know");
+    setLanguage("fr");
+    expect(te("D:\\ has no Recycle Bin")).toBe("D:\\ n’a pas de Corbeille");
+    setLanguage("es");
+    expect(t("{0} free of {1}", "12 GB", "500 GB")).toBe("12 GB libres de 500 GB");
     setLanguage("en");
     expect(te("Nothing has been scanned yet.")).toBe("Nothing has been scanned yet.");
   });

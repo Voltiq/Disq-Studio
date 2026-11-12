@@ -11,10 +11,12 @@
  */
 
 import { de } from "./de";
+import { es } from "./es";
+import { fr } from "./fr";
 
-export type Language = "en" | "de";
+export type Language = "en" | "de" | "es" | "fr";
 export type LanguageChoice = Language | "system";
-const LANGUAGES: Language[] = ["en", "de"];
+export const LANGUAGES: Language[] = ["en", "de", "es", "fr"];
 
 /** Where the language choice is kept; read here directly so it's known before anything renders. */
 const KEY = "disk-studio.language";
@@ -22,7 +24,7 @@ const KEY = "disk-studio.language";
 export function languageChoice(): LanguageChoice {
   try {
     const saved = localStorage.getItem(KEY);
-    if (saved === "en" || saved === "de") return saved;
+    if (LANGUAGES.includes(saved as Language)) return saved as Language;
   } catch {
     // Storage unavailable: follow Windows.
   }
@@ -46,7 +48,7 @@ function detect(): Language {
 }
 
 let language: Language = detect();
-const tables: Record<Language, Record<string, string>> = { en: {}, de };
+const tables: Record<Language, Record<string, string>> = { en: {}, de, es, fr };
 
 if (typeof document !== "undefined") document.documentElement.lang = language;
 
@@ -56,7 +58,7 @@ export function currentLanguage(): Language {
 
 /** The locale dates and numbers are written in: the interface's, not whatever Windows is set to. */
 export function locale(): string {
-  return language === "de" ? "de-DE" : "en-GB";
+  return { en: "en-GB", de: "de-DE", es: "es-ES", fr: "fr-FR" }[language];
 }
 
 /** For tests. */
@@ -83,7 +85,7 @@ export function te(text: string): string {
   // "C:\ has no Recycle Bin" matches the key "{0} has no Recycle Bin": paths, sizes,
   // numbers and quoted names are placeholders.
   const args: string[] = [];
-  const key = text.replace(/“[^”]*”|[A-Za-z]:\\[^\s,;)]*|\d+(?:[.,]\d+)?(?: (?:bytes|KB|MB|GB|TB))?/g, (m) => {
+  const key = text.replace(/“[^”]*”|[A-Za-z]:\\[^\s,;)]*|\d+(?:[.,]\d+)?(?: (?:bytes|KB|MB|GB|TB|Ko|Mo|Go|To))?/g, (m) => {
     args.push(m);
     return `{${args.length - 1}}`;
   });

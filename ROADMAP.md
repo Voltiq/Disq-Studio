@@ -325,3 +325,12 @@ A fast, Graphiq-styled disk space visualizer built with Tauri 2, Rust and React.
   the spring animation of the menus, combobox / listbox roles, arrows, Home/End, type-ahead, Esc and Tab
 - [x] Checked in the preview in German: home, scan, map, list, details, duplicates, settings and the
   language dropdown; no console errors
+
+## v1.2 — Spanish and French
+- [x] **Spanish and French** (1.2.0): `src/lib/es.ts` (tú, as in Windows) and `fr.ts` (vous), the same
+  keys as German, including the sentences that come from Rust. French sizes are in octets (Ko, Mo, Go) in
+  the interface and the HTML report. `i18n.rs` keeps one language of four for the notifications and the
+  report (dates as 04/11/2026). `npm test` runs the coverage and placeholder checks for every language;
+  `every_language_has_every_sentence` does the same for the Rust tables
+- [x] Checked in the preview in French and Spanish: home, scan, map, list, details, settings and the
+  language dropdown; no console errors

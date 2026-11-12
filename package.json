@@ -1,7 +1,7 @@
 {
   "name": "disk-studio",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "See what's filling your drive, and clear it out safely: a fast disk space visualizer for Windows.",
   "license": "MIT",
   "repository": "github:Voltiq/Disq-Studio",

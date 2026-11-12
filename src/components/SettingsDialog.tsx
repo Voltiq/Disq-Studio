@@ -254,6 +254,8 @@ export function SettingsDialog({
                   { value: "system", label: t("Follow Windows") },
                   { value: "en", label: "English" },
                   { value: "de", label: "Deutsch" },
+                  { value: "es", label: "Español" },
+                  { value: "fr", label: "Français" },
                 ]}
                 onChange={(choice) => {
                   saveLanguageChoice(choice);

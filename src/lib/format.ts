@@ -1,7 +1,10 @@
-import { locale, t } from "./i18n";
+import { currentLanguage, locale, t } from "./i18n";
 
-const BINARY_UNITS = ["bytes", "KB", "MB", "GB", "TB", "PB"];
-const DECIMAL_UNITS = ["bytes", "kB", "MB", "GB", "TB", "PB"];
+// French writes octets: Ko, Mo, Go, as Windows does.
+const BINARY_UNITS =
+  currentLanguage() === "fr" ? ["octets", "Ko", "Mo", "Go", "To", "Po"] : ["bytes", "KB", "MB", "GB", "TB", "PB"];
+const DECIMAL_UNITS =
+  currentLanguage() === "fr" ? ["octets", "ko", "Mo", "Go", "To", "Po"] : ["bytes", "kB", "MB", "GB", "TB", "PB"];
 
 // Set from Settings. Windows counts 1 KB as 1,024 bytes; drive makers count 1,000.
 let base = 1024;
